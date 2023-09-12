@@ -37,15 +37,15 @@ pub fn main() {
     canvas.0.set_draw_color(Color::RGB(255, 255, 255));
     canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.0.present();
-    let mut flock_master = Boid::new();
-    flock_master.init_boidee(3);
+    let mut flock_master = Boid::new(canvas.0.output_size().unwrap().clone());
+    flock_master.init_boidee_random(30);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
     'running: loop {
         canvas.0.set_draw_color(Color::RGB(0, 0, 0));
         canvas.0.clear();
         canvas.0.set_draw_color(Color::RGB(255, 255, 255));
-        flock_master.step(&mut canvas);
+        flock_master.step_draw(&mut canvas);
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
@@ -56,7 +56,7 @@ pub fn main() {
             }
         }
         // The rest of the game loop goes here...
-//        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     canvas.0.present();
     }
 }
