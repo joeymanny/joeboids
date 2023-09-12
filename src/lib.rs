@@ -1,38 +1,104 @@
+// TODO error enum
+//
+// NOTE: take BoidCanvas as arg to step_draw(T: BoidCanvas) function rather 
+// than storing a reference to canvas inside Boid
+use std::iter::zip;
+use std::fmt;
 use std::ops::Add;
 pub trait BoidCanvas {
     fn draw_triangle(&mut self, p1: (i32, i32), p2: (i32, i32), p3: (i32, i32)) -> Result<(), String>;
 }
-struct Boid<'a,T: BoidCanvas> {
+pub struct Boid<'a,T: BoidCanvas> {
     canvas: &'a mut T,
-    b0: Vec<i32>,
-    b1: Vec<i32>,
+    b0: Vec<Boidee>,
+    b1: Vec<Boidee>,
     switch: bool,
 }
 impl<U: BoidCanvas> Boid<'_, U> {
-    fn new<T: BoidCanvas> (canvas: &mut T) -> Boid<T> {
+    pub fn new<T: BoidCanvas> (canvas: &mut T) -> Boid<T> {
         Boid {
             canvas: canvas,
-            b0: Vec::<i32>::new(),
-            b1: Vec::<i32>::new(),
+            b0: Vec::<Boidee>::new(),
+            b1: Vec::<Boidee>::new(),
+            // indicates which buffer has the most up-to-date
+            // data
+            // false = b0,
+            // true = b1
             switch: false,
         }
+    }
+    pub fn init_boidee(&mut self, num: u32) {
+        for _ in 0..num {
+            self.b0.push(Boidee::new());
+            self.b1.push(Boidee::new());
+        }
+        // make sure we start knowing buffer 0 has the data
+        self.switch = false;
+    }
+    pub fn step(&mut self) {
+        // target buffer
+        let mut b;
+        // buffer containing most up-to-date boids
+        let c;
+        if self.switch {
+            b = &mut self.b0;
+            c = &self.b1;
+        } else {
+            b = &mut self.b1;
+            c = &self.b0;
+        }
+        for (current, buffer) in zip(c, b) {
+            let new_boid = current.step(c);
+            println!("{}", &new_boid);
+            self.canvas.draw_triangle(
+                ((new_boid.pos.x - 5.0) as i32, (new_boid.pos.y - 5.0) as i32),
+                ((new_boid.pos.x) as i32, (new_boid.pos.y + 5.0) as i32),
+                ((new_boid.pos.x + 5.0) as i32, (new_boid.pos.y + 5.0) as i32)
+            );
+            *buffer = new_boid;
+        }
+        self.switch = !self.switch;
     }
 }
 struct Boidee {
     pos: Vector2,
-    dir: Angle,
+    dir: f32,
     speed: f32,
 }
-struct Angle {
-    rad: f32
+impl fmt::Display for Boidee {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "pos: ({},{}) bearing: {}° speed: {}", self.pos.x, self.pos.y, self.dir, self.speed)
+    }
 }
-impl Angle {
-    fn new (x: f32) -> Angle {
-        Angle {
-            rad: x
+
+impl Boidee {
+    fn new() -> Boidee {
+        Boidee {
+            pos: Vector2::new(0.0, 0.0),
+            dir: 0.0,
+            speed: 1.0,
+        }
+    }
+    fn step(&self, flock: &Vec<Boidee>) -> Boidee {
+        let new_pos = self.pos + Vector2::new(self.dir.sin(), self.dir.cos());
+        Boidee {
+            pos: new_pos,
+            dir: self.dir.clone() + 1.0,
+            speed: self.speed.clone(),
         }
     }
 }
+//struct Angle {
+//    rad: f32
+//}
+//impl Angle {
+//    fn new (x: f32) -> Angle {
+//        Angle {
+//            rad: x
+//        }
+//    }
+//}
+#[derive (Clone, Copy)]
 struct Vector2 {
     x: f32,
     y: f32,
