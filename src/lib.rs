@@ -2,22 +2,21 @@
 //
 // NOTE: take BoidCanvas as arg to step_draw(T: BoidCanvas) function rather 
 // than storing a reference to canvas inside Boid
+use rand::Rng;
 use std::iter::zip;
 use std::fmt;
 use std::ops::Add;
 pub trait BoidCanvas {
     fn draw_triangle(&mut self, p1: (i32, i32), p2: (i32, i32), p3: (i32, i32)) -> Result<(), String>;
 }
-pub struct Boid<'a,T: BoidCanvas> {
-    canvas: &'a mut T,
+pub struct Boid {
     b0: Vec<Boidee>,
     b1: Vec<Boidee>,
     switch: bool,
 }
-impl<U: BoidCanvas> Boid<'_, U> {
-    pub fn new<T: BoidCanvas> (canvas: &mut T) -> Boid<T> {
+impl Boid {
+    pub fn new() -> Boid {
         Boid {
-            canvas: canvas,
             b0: Vec::<Boidee>::new(),
             b1: Vec::<Boidee>::new(),
             // indicates which buffer has the most up-to-date
@@ -35,7 +34,7 @@ impl<U: BoidCanvas> Boid<'_, U> {
         // make sure we start knowing buffer 0 has the data
         self.switch = false;
     }
-    pub fn step(&mut self) {
+    pub fn step<T: BoidCanvas>(&mut self, canvas: &mut T) {
         // target buffer
         let mut b;
         // buffer containing most up-to-date boids
@@ -50,10 +49,10 @@ impl<U: BoidCanvas> Boid<'_, U> {
         for (current, buffer) in zip(c, b) {
             let new_boid = current.step(c);
             println!("{}", &new_boid);
-            self.canvas.draw_triangle(
-                ((new_boid.pos.x - 5.0) as i32, (new_boid.pos.y - 5.0) as i32),
-                ((new_boid.pos.x) as i32, (new_boid.pos.y + 5.0) as i32),
-                ((new_boid.pos.x + 5.0) as i32, (new_boid.pos.y + 5.0) as i32)
+            canvas.draw_triangle(
+                ((new_boid.pos.x - 5.0) as i32, (new_boid.pos.y + 5.0) as i32),
+                ((new_boid.pos.x + 5.0) as i32, (new_boid.pos.y + 5.0) as i32),
+                ((new_boid.pos.x) as i32, (new_boid.pos.y - 5.0) as i32)
             );
             *buffer = new_boid;
         }
@@ -76,14 +75,14 @@ impl Boidee {
         Boidee {
             pos: Vector2::new(0.0, 0.0),
             dir: 0.0,
-            speed: 1.0,
+            speed: rand::thread_rng().gen::<f32>() * 5.0,
         }
     }
     fn step(&self, flock: &Vec<Boidee>) -> Boidee {
-        let new_pos = self.pos + Vector2::new(self.dir.sin(), self.dir.cos());
+        let new_pos = self.pos + Vector2::new(self.dir.sin() * self.speed, self.dir.cos() * self.speed);
         Boidee {
             pos: new_pos,
-            dir: self.dir.clone() + 1.0,
+            dir: self.dir.clone() + 0.01,
             speed: self.speed.clone(),
         }
     }
