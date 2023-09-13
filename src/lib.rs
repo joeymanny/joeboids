@@ -1,7 +1,9 @@
+const SIZE_FACTOR: f32 = 7.0;
 // TODO error enum
 //
 // NOTE: take BoidCanvas as arg to step_draw(T: BoidCanvas) function rather 
 // than storing a reference to canvas inside Boid
+use std::f32::consts::PI;
 use rand::Rng;
 use std::iter::zip;
 use std::fmt;
@@ -57,10 +59,18 @@ impl Boid {
         }
         for (current, buffer) in zip(c, b) {
             let new_boid = current.step(c, &self.bounds);
+            let h_sin = new_boid.dir.sin();
+            let h_cos = new_boid.dir.cos();
             canvas.draw_triangle(
-                ((new_boid.pos.x - 5.0) as i32, (new_boid.pos.y + 5.0) as i32),
-                ((new_boid.pos.x + 5.0) as i32, (new_boid.pos.y + 5.0) as i32),
-                ((new_boid.pos.x) as i32, (new_boid.pos.y - 5.0) as i32)
+                // tip: (sin * fac) + world
+                (((new_boid.dir.sin() * SIZE_FACTOR) + new_boid.pos.x) as i32,
+                ((new_boid.dir.cos() * SIZE_FACTOR) + new_boid.pos.y) as i32),
+                // bottom left: (sin+90 * fac) + world
+                ((((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin) + new_boid.pos.x) as i32,
+                (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.y) as i32),
+                // bottom right: (sin-90 * fac) + world
+                ((((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin) + new_boid.pos.x) as i32,
+                (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.y) as i32),
             );
             *buffer = new_boid;
         }
@@ -106,8 +116,8 @@ impl Boidee {
         }
         Boidee {
             pos: new_pos,
-            dir: self.dir.clone(),
-            speed: self.speed.clone(),
+            dir: self.dir.clone() + 0.01,
+            speed: self.speed.clone() ,
         }
     }
 }
