@@ -83,7 +83,7 @@ impl Boidee {
         let mut rand = rand::thread_rng();
         Boidee {
             pos: Vector2::new(rand.gen::<f32>() * bounds.0 as f32, rand.gen::<f32>() * bounds.1 as f32),
-            dir: rand::thread_rng().gen::<f32>() * 2.0,
+            dir: rand::thread_rng().gen::<f32>() * std::f32::consts::PI * 2.0,
             speed: rand::thread_rng().gen::<f32>() * 3.0,
         }
     }
