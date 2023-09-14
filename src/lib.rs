@@ -1,8 +1,7 @@
-const SIZE_FACTOR: f32 = 7.0;
-// TODO error enum
-//
-// NOTE: take BoidCanvas as arg to step_draw(T: BoidCanvas) function rather 
-// than storing a reference to canvas inside Boid
+const SIZE_FACTOR: f32 = 8.0;
+// TODO boid logic: turn toward flock center
+use std::ops::Sub;
+use std::ops::Div;
 use std::f32::consts::PI;
 use rand::Rng;
 use std::iter::zip;
@@ -47,7 +46,7 @@ impl Boid {
     }
     pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
         // target buffer
-        let mut b;
+        let b;
         // buffer containing most up-to-date boids
         let c;
         if self.switch {
@@ -57,8 +56,19 @@ impl Boid {
             b = &mut self.b1;
             c = &self.b0;
         }
-        for (current, buffer) in zip(c, b) {
-            let new_boid = current.step(c, &self.bounds);
+            let mut flock_avg = Vector2::new(0.0, 0.0);
+            if b.len() != 0 {
+                for boid in b.iter() {
+                        flock_avg = flock_avg + boid.pos;
+            }
+            flock_avg = flock_avg / b.len() as f32;
+            canvas.draw_triangle(
+                (flock_avg.x.round() as i32 - 3, flock_avg.y.round() as i32 - 3),
+                (flock_avg.x.round() as i32 + 3, flock_avg.y.round() as i32 - 3),
+                (flock_avg.x.round() as i32, flock_avg.y.round() as i32 + 3));
+            }
+        for (i, (current, buffer)) in zip(c, b).enumerate() {
+            let new_boid = current.step(c, &self.bounds, i);
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
             canvas.draw_triangle(
@@ -71,9 +81,10 @@ impl Boid {
                 // bottom right: (sin-90 * fac) + world
                 ((((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin) + new_boid.pos.x) as i32,
                 (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.y) as i32),
-            );
+            ).unwrap();
             *buffer = new_boid;
         }
+
         self.switch = !self.switch;
     }
 }
@@ -104,8 +115,23 @@ impl Boidee {
             speed: 1.0,
         }
     }
-    fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32)) -> Boidee {
+    fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32), my_index: usize) -> Boidee {
+        let mut flock_avg = Vector2::new(0.0, 0.0);
+        if flock.len() != 0 {
+            for (i, boid) in flock.iter().enumerate() {
+                if i != my_index {
+                    flock_avg = flock_avg + boid.pos;
+                }
+            }
+            flock_avg = flock_avg / (flock.len() - 1) as f32;
+        //    println!("I'm boid {} and i think the flock center is {}", my_index, flock_avg);
+        }
+        // TODO: they spin in place
+        let new_dir = self.dir + ref_to_total((flock_avg.y / flock_avg.x).acos(), flock_avg - self.pos);
+        // boid steps forward
         let mut new_pos = self.pos + Vector2::new(self.dir.sin() * self.speed, self.dir.cos() * self.speed);
+
+        // all modifications to pos should be done before this point
         new_pos.x = new_pos.x % bounds.0 as f32;
         new_pos.y = new_pos.y % bounds.1 as f32;
         if new_pos.x < 0.0 {
@@ -114,9 +140,10 @@ impl Boidee {
         if new_pos.y < 0.0 {
             new_pos.y += bounds.1 as f32;
         }
+
         Boidee {
             pos: new_pos,
-            dir: self.dir.clone() + 0.01,
+            dir: new_dir + 0.01,
             speed: self.speed.clone() ,
         }
     }
@@ -143,6 +170,32 @@ impl Vector2 {
             y: y,
         }
     }
+    fn normalized(self) -> Self {
+        let fac = 1.0 / (self.x.powf(2.0) + self.y.powf(2.0)).sqrt();
+        Vector2 {
+            x: self.x * fac,
+            y: self.y * fac,
+        }
+    }
+}
+
+impl Div<f32> for Vector2 {
+    type Output = Vector2;
+    fn div(self, rhs: f32) -> Self::Output{
+        Vector2 {
+            x: self.x / rhs,
+            y: self.y / rhs,
+        }
+    }
+}
+impl Sub for Vector2 {
+    type Output = Vector2;
+    fn sub(self, rhs: Vector2) -> Self::Output {
+        Vector2 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
 }
 impl Add for Vector2 {
     type Output = Vector2;
@@ -153,3 +206,35 @@ impl Add for Vector2 {
         }
     }
 }
+impl fmt::Display for Vector2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+    fn ref_to_total(mut me: f32, p: Vector2) -> f32 {
+        let f: f32;
+        let rs: bool;
+        if p.x.is_sign_positive() {
+            if p.y.is_sign_positive() {
+                f = 0.0;
+                rs = true;
+            } else {
+                f = 2.0 * PI;
+                rs = false;
+            }
+        } else {
+            if p.y.is_sign_positive() {
+                f = PI;
+                rs = false;
+            } else {
+                f = PI;
+                rs = true;
+            }
+        }
+        me = me.abs();
+        if rs {
+            f + me
+        } else {
+            f - me
+        }
+    }
