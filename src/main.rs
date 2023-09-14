@@ -33,7 +33,6 @@ pub fn main() {
     let mut canvas = Wrapper(canvas);
     canvas.0.set_draw_color(Color::RGB(0, 0, 0));
     canvas.0.clear();
-    canvas.0.present();
     canvas.0.set_draw_color(Color::RGB(255, 255, 255));
     canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.0.present();
