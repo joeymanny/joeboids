@@ -11,7 +11,7 @@ use sdl2::video::Window;
 
 struct Wrapper(Canvas<Window>);
 
-//TODO
+//NOTE: idea: have the title bar update with some info. use set_title() on the window
 impl BoidCanvas for Wrapper {
     fn draw_triangle(&mut self, p1: (i32, i32), p2: (i32, i32), p3: (i32, i32)) -> Result<(), String> {
         self.0.draw_line(p1, p2)?;
@@ -24,7 +24,7 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
  
-    let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
+    let window = video_subsystem.window("obama faked the moon landing the appease the reptile people", 800, 600)
         .position_centered()
         .build()
         .unwrap();
