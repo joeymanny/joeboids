@@ -80,29 +80,25 @@ impl Boid {
             );
         }
         for (i, (current, buffer)) in zip(c, b).enumerate() {
-            let new_boid = current.step(c, &self.bounds, i);
+            let new_boid = current.step(c, &self.bounds, i, flock_avg);
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
             canvas
                 .draw_triangle(
                     // tip: (sin * fac) + world
                     (
-                        ((new_boid.dir.sin() * SIZE_FACTOR) + new_boid.pos.x) as i32,
-                        ((new_boid.dir.cos() * SIZE_FACTOR) + new_boid.pos.y) as i32,
+                        ((new_boid.dir.cos() * SIZE_FACTOR) + new_boid.pos.x) as i32,
+                        ((new_boid.dir.sin() * SIZE_FACTOR) + new_boid.pos.y) as i32,
                     ),
                     // bottom left: (sin+90 * fac) + world
                     (
-                        (((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
-                            + new_boid.pos.x) as i32,
-                        (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
-                            + new_boid.pos.y) as i32,
+                        (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.x) as i32,
+                        (((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin) + new_boid.pos.y) as i32,
                     ),
                     // bottom right: (sin-90 * fac) + world
                     (
-                        (((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
-                            + new_boid.pos.x) as i32,
-                        (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
-                            + new_boid.pos.y) as i32,
+                        (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.x) as i32,
+                        (((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)+ new_boid.pos.y) as i32,
                     ),
                 )
                 .unwrap();
@@ -117,6 +113,7 @@ struct Boidee {
     pos: Vector2,
     dir: f32,
     speed: f32,
+    agility: f32,
 }
 impl fmt::Display for Boidee {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -129,43 +126,32 @@ impl fmt::Display for Boidee {
 }
 impl Boidee {
     fn random(bounds: &(u32, u32)) -> Boidee {
-        let mut rand = rand::thread_rng();
+        let mut r = rand::thread_rng();
+        let mut ag = r.gen::<f32>();
         Boidee {
             pos: Vector2::new(
-                rand.gen::<f32>() * bounds.0 as f32,
-                rand.gen::<f32>() * bounds.1 as f32,
+                r.gen::<f32>() * bounds.0 as f32,
+                r.gen::<f32>() * bounds.1 as f32,
             ),
-            dir: rand::thread_rng().gen::<f32>() * std::f32::consts::PI * 2.0,
-            speed: rand::thread_rng().gen::<f32>() * 0.0, // THIS IS WHERE THE ISSUE IS
+            dir: r.gen::<f32>() * PI * 2.0,
+            speed: 0.1 + r.gen::<f32>() ,
+            agility: 0.007
         }
     }
     fn new() -> Boidee {
         Boidee {
             pos: Vector2::new(0.0, 0.0),
             dir: 0.0,
-            speed: 1.0,
+            speed: 5.0,
+            agility: 0.5,
         }
     }
-    fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32), my_index: usize) -> Boidee {
-        let mut flock_avg = Vector2::new(0.0, 0.0);
-        //if flock.len() != 0 {
-        //    for (i, boid) in flock.iter().enumerate() {
-        //        if i != my_index {
-        //            flock_avg = flock_avg + boid.pos;
-        //        }
-        //    }
-        //    flock_avg = flock_avg / (flock.len() - 1) as f32;
-            //    println!("I'm boid {} and i think the flock center is {}", my_index, flock_avg);
-        //}
-        let flock_avg = Vector2::new(300.0, 300.0);
+    fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32), my_index: usize, flock_avg: Vector2) -> Boidee {
         // TODO: they spin in place
-            ref_to_total(
-                ((flock_avg.y - self.pos.y) / (flock_avg.x - self.pos.x)).atan(),
-                flock_avg
-            );
+            let new_dir = self.dir - ( self.agility * face_point(self.dir, flock_avg - self.pos));
         // boid steps forward
         let mut new_pos =
-            self.pos + Vector2::new(self.dir.sin() * self.speed, self.dir.cos() * self.speed);
+            self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
 
         // all modifications to pos should be done before this point
         new_pos.x = new_pos.x % bounds.0 as f32;
@@ -179,8 +165,9 @@ impl Boidee {
 
         Boidee {
             pos: new_pos,
-            dir: self.dir + 0.01,
+            dir: new_dir,
             speed: self.speed.clone(),
+            agility: self.agility.clone()
         }
     }
 }
@@ -194,7 +181,7 @@ impl Boidee {
 //        }
 //    }
 //}
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct Vector2 {
     x: f32,
     y: f32,
@@ -244,29 +231,23 @@ impl fmt::Display for Vector2 {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
-
-fn ref_to_total(mut me: f32, p: Vector2) -> f32 {
-    println!("input angle: {} ({} pi)", me, me / PI);
-    let f: f32;
-    //let rs: bool;
-    if p.x.is_sign_positive() {
-        if p.y.is_sign_positive() {
-            f = 0.0;
-         //   rs = true;
-        } else {
-            f = 2.0 * PI;
-       //     rs = false;
-        }
-    } else {
-        if p.y.is_sign_positive() {
-            f = PI;
-     //       rs = false;
-        } else {
-            f = PI;
-      //      rs = true;
-        }
+fn face_point(curr: f32, point: Vector2) -> f32 {
+    let wish = atan2_to_total(point.y.atan2(point.x));
+    let mut means = wish - curr;
+    // check if theres a closer way going to opposite direction
+    if means > PI {
+        means = (2.0 * PI) - means
     }
-    //me = me.abs();
-    println!("output angle:{} ({})", f + me, (f + me) / PI);
-    f + me
+    if means < (-1.0 * PI) {
+        means = (2.0 * PI) + means
+    }
+    means % (2.0 * PI)
+
+}
+fn atan2_to_total(n: f32) -> f32 {
+    if n.is_sign_negative() {
+        (2.0 * PI) + n
+    } else {
+        n
+    }
 }

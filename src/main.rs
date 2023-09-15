@@ -37,7 +37,7 @@ pub fn main() {
     canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.0.present();
     let mut flock_master = Boid::new(canvas.0.output_size().unwrap().clone());
-    flock_master.init_boidee_random(1);
+    flock_master.init_boidee_random(200);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
     'running: loop {
@@ -55,7 +55,7 @@ pub fn main() {
             }
         }
         // The rest of the game loop goes here...
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 600));
     canvas.0.present();
     }
 }
