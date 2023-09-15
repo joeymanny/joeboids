@@ -1,5 +1,6 @@
 const SIZE_FACTOR: f32 = 8.0;
 // TODO boid logic: turn toward flock center
+
 use rand::Rng;
 use std::f32::consts::PI;
 use std::fmt;
@@ -7,6 +8,7 @@ use std::iter::zip;
 use std::ops::Add;
 use std::ops::Div;
 use std::ops::Sub;
+use std::ops::Mul;
 pub trait BoidCanvas {
     fn draw_triangle(
         &mut self,
@@ -148,7 +150,8 @@ impl Boidee {
     }
     fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32), my_index: usize, flock_avg: Vector2) -> Boidee {
         // TODO: they spin in place
-            let new_dir = self.dir - ( self.agility * face_point(self.dir, flock_avg - self.pos));
+            let mut new_dir = self.dir + (1.0 *  (self.agility * (face_point(self.dir, flock_avg - self.pos))));
+            new_dir = new_dir + (0.7 * (self.agility * avoid_point(new_dir, Vector2::new(200.0, 400.0) - self.pos)));
         // boid steps forward
         let mut new_pos =
             self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
@@ -208,6 +211,15 @@ impl Div<f32> for Vector2 {
         }
     }
 }
+impl Mul<f32> for Vector2 {
+    type Output = Vector2;
+    fn mul(self, rhs: f32) -> Self::Output {
+        Vector2 {
+            x: self.x * rhs,
+            y: self.y * rhs,
+        }
+    }
+}
 impl Sub for Vector2 {
     type Output = Vector2;
     fn sub(self, rhs: Vector2) -> Self::Output {
@@ -230,6 +242,10 @@ impl fmt::Display for Vector2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
+}
+fn avoid_point(curr: f32, point: Vector2) -> f32 {
+    let point = point * -1.0;
+    face_point(curr, point)
 }
 fn face_point(curr: f32, point: Vector2) -> f32 {
     let wish = atan2_to_total(point.y.atan2(point.x));
