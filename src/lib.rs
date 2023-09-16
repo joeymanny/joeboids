@@ -1,4 +1,7 @@
 const SIZE_FACTOR: f32 = 8.0;
+const TOO_CLOSE: f32 = 15.0;
+const LOCAL_SIZE: f32 = 40.0;
+const MAX_RAND_SCOPE: u32 = 400;
 // TODO boid logic: turn toward flock center
 
 use rand::Rng;
@@ -7,8 +10,8 @@ use std::fmt;
 use std::iter::zip;
 use std::ops::Add;
 use std::ops::Div;
-use std::ops::Sub;
 use std::ops::Mul;
+use std::ops::Sub;
 pub trait BoidCanvas {
     fn draw_triangle(
         &mut self,
@@ -52,6 +55,9 @@ impl Boid {
         self.switch = false;
     }
     pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
+        self.step_fn_draw(canvas, ||{})
+    }
+    pub fn step_fn_draw<T: BoidCanvas, F: FnOnce() -> ()>(&mut self, canvas: &mut T, func: F) {
         // target buffer
         let b;
         // buffer containing most up-to-date boids
@@ -83,6 +89,10 @@ impl Boid {
         }
         for (i, (current, buffer)) in zip(c, b).enumerate() {
             let new_boid = current.step(c, &self.bounds, i, flock_avg);
+            *buffer = new_boid
+        }
+        func();
+        for new_boid in c {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
             canvas
@@ -94,17 +104,20 @@ impl Boid {
                     ),
                     // bottom left: (sin+90 * fac) + world
                     (
-                        (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.x) as i32,
-                        (((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin) + new_boid.pos.y) as i32,
+                        (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
+                            + new_boid.pos.x) as i32,
+                        (((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
+                            + new_boid.pos.y) as i32,
                     ),
                     // bottom right: (sin-90 * fac) + world
                     (
-                        (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos) + new_boid.pos.x) as i32,
-                        (((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)+ new_boid.pos.y) as i32,
+                        (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
+                            + new_boid.pos.x) as i32,
+                        (((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
+                            + new_boid.pos.y) as i32,
                     ),
                 )
                 .unwrap();
-            *buffer = new_boid;
         }
 
         self.switch = !self.switch;
@@ -116,6 +129,8 @@ struct Boidee {
     dir: f32,
     speed: f32,
     agility: f32,
+    randscope: u32,
+    rand: f32,
 }
 impl fmt::Display for Boidee {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -135,9 +150,11 @@ impl Boidee {
                 r.gen::<f32>() * bounds.0 as f32,
                 r.gen::<f32>() * bounds.1 as f32,
             ),
-            dir: r.gen::<f32>() * PI * 2.0,
-            speed: 0.1 + r.gen::<f32>() ,
-            agility: 0.007
+            dir: r.gen::<f32>() * (PI * 2.0),
+            speed: 1.0 - (r.gen::<f32>() * 0.5),
+            agility: 0.007 + ((r.gen::<f32>() - 0.5) * 0.004),
+            randscope: 0,
+            rand: 0.0,
         }
     }
     fn new() -> Boidee {
@@ -146,12 +163,65 @@ impl Boidee {
             dir: 0.0,
             speed: 5.0,
             agility: 0.5,
+            randscope: 0,
+            rand: 0.0,
         }
     }
-    fn step(&self, flock: &Vec<Boidee>, bounds: &(u32, u32), my_index: usize, flock_avg: Vector2) -> Boidee {
-        // TODO: they spin in place
-            let mut new_dir = self.dir + (1.0 *  (self.agility * (face_point(self.dir, flock_avg - self.pos))));
-            new_dir = new_dir + (0.7 * (self.agility * avoid_point(new_dir, Vector2::new(200.0, 400.0) - self.pos)));
+    fn step(
+        &self,
+        flock: &Vec<Boidee>,
+        bounds: &(u32, u32),
+        my_index: usize,
+        flock_avg: Vector2,
+    ) -> Boidee {
+        let mut r = rand::thread_rng();
+        let mut new_dir = self.dir;
+        let new_randscope;
+        let new_rand;
+        if self.randscope <= 0 {
+            new_randscope = (r.gen::<f32>() * MAX_RAND_SCOPE as f32) as u32;
+            new_rand = (r.gen::<f32>() - 0.5) * 0.02;
+        } else {
+            new_dir = (new_dir + self.rand) % (2.0 * PI);
+            new_randscope = self.randscope - 1;
+            new_rand = self.rand;
+            if new_dir < 0.0 {
+                new_dir = (2.0 * PI) + new_dir;
+            }
+        }
+        let mut local_avg = Vector2::new(0.0, 0.0);
+        let mut local_num = 0;
+        let mut local_dir = 0.0;
+        let mut too_close_p = Vector2::new(0.0, 0.0);
+        let mut too_close_n = 0;
+        for (i, fren) in flock.iter().enumerate() {
+            if i != my_index {
+                let dist = (fren.pos - self.pos).abs();
+                if dist <= LOCAL_SIZE {
+                    if dist <= TOO_CLOSE {
+                        too_close_p = too_close_p + (fren.pos - self.pos);
+                        too_close_n += 1;
+                    }
+                    local_dir += fren.dir;
+                    local_avg = local_avg + (fren.pos - self.pos);
+                    local_num += 1;
+                }
+            }
+        }
+        if local_num != 0 {
+            if too_close_n != 0 {
+                too_close_p = too_close_p / too_close_n as f32;
+                // avoid locals too close
+                new_dir = new_dir + (self.agility * 4.0 * avoid_point(new_dir, too_close_p));
+            }
+            local_avg = local_avg / local_num as f32;
+            local_dir = local_dir / local_num as f32;
+            // go towards center of local cluster
+            new_dir = new_dir + (self.agility * 2.0 * face_point(new_dir, local_avg));
+            // try face local average
+            new_dir = new_dir + (self.agility * 3.0 * face(new_dir, local_dir));
+        }
+
         // boid steps forward
         let mut new_pos =
             self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
@@ -165,12 +235,17 @@ impl Boidee {
         if new_pos.y < 0.0 {
             new_pos.y += bounds.1 as f32;
         }
-
+        new_dir = new_dir % (2.0 * PI);
+        if new_dir < 0.0 {
+            new_dir = (2.0 * PI) + new_dir;
+        }
         Boidee {
             pos: new_pos,
             dir: new_dir,
             speed: self.speed.clone(),
-            agility: self.agility.clone()
+            agility: self.agility.clone(),
+            randscope: new_randscope,
+            rand: new_rand,
         }
     }
 }
@@ -184,7 +259,7 @@ impl Boidee {
 //        }
 //    }
 //}
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Vector2 {
     x: f32,
     y: f32,
@@ -193,8 +268,11 @@ impl Vector2 {
     fn new(x: f32, y: f32) -> Vector2 {
         Vector2 { x: x, y: y }
     }
+    fn abs(self) -> f32 {
+        (self.x.powi(2) + self.y.powi(2)).sqrt()
+    }
     fn normalized(self) -> Self {
-        let fac = 1.0 / (self.x.powf(2.0) + self.y.powf(2.0)).sqrt();
+        let fac = 1.0 / self.abs();
         Vector2 {
             x: self.x * fac,
             y: self.y * fac,
@@ -243,6 +321,17 @@ impl fmt::Display for Vector2 {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
+fn face(curr: f32, wish: f32) -> f32 {
+    let mut means = wish - curr;
+    // check if theres a closer way going to opposite direction
+    if means > PI {
+        means = (2.0 * PI) - means
+    }
+    if means < (-1.0 * PI) {
+        means = (2.0 * PI) + means
+    }
+    means % (2.0 * PI)
+}
 fn avoid_point(curr: f32, point: Vector2) -> f32 {
     let point = point * -1.0;
     face_point(curr, point)
@@ -258,7 +347,6 @@ fn face_point(curr: f32, point: Vector2) -> f32 {
         means = (2.0 * PI) + means
     }
     means % (2.0 * PI)
-
 }
 fn atan2_to_total(n: f32) -> f32 {
     if n.is_sign_negative() {
