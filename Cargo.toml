@@ -10,7 +10,7 @@ rand = "0.8.4"
 
 [dependencies.sdl2]
 version = "0.35.0"
-features = ["bundled"]
+# features = ["bundled"]
 
 [profile.windows_gnu]
 inherits = "release"
