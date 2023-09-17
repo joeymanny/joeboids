@@ -1,7 +1,7 @@
 const SIZE_FACTOR: f32 = 8.0;
 const TOO_CLOSE: f32 = 15.0;
-const LOCAL_SIZE: f32 = 60.0;
-const MAX_RAND_SCOPE: f32 = 0.3;
+const LOCAL_SIZE: f32 = 50.0;
+const MAX_RAND_SCOPE: f32 = 4.0;
 
 use rand::Rng;
 use std::f32::consts::PI;
@@ -155,8 +155,8 @@ impl Boidee {
                 r.gen::<f32>() * bounds.0 as f32,
                 r.gen::<f32>() * bounds.1 as f32,
             ),
-            dir: (r.gen::<f32>() * ((PI * 2.0) - 0.1)) + 0.1,
-            speed: 1500.0, //- (r.gen::<f32>() * 500.0),
+            dir: r.gen::<f32>() * (PI * 2.0),
+            speed: 200.0 - (r.gen::<f32>() * 10.0),
             agility: 0.01,
             randscope: 0.0,
             rand: 0.0,
@@ -222,13 +222,13 @@ impl Boidee {
                 too_close_p = (too_close_p / too_close_n as f32);
                 // avoid locals too close
                 new_pos = new_pos - (((too_close_p - self.pos) * (1.0 / (too_close_p.abs() - 0.01))) * 0.5);
-                new_dir = new_dir + (self.agility * 700.0 * dt * avoid_point(self.dir, too_close_p - self.pos));
+                new_dir = new_dir + (self.agility * 600.0 * dt * avoid_point(self.dir, too_close_p - self.pos));
             }
             local_avg = local_avg / local_num as f32;
             local_avg = local_avg;
             local_dir = local_dir / local_num as f32;
             // go towards center of local cluster
-            new_dir = new_dir + (self.agility * 400.0 * dt * face_point(self.dir, local_avg - self.pos));
+            new_dir = new_dir + (self.agility * 80.0 * dt * face_point(self.dir, local_avg - self.pos));
             // try face local average
             new_dir = new_dir + (self.agility * 800.0 * dt * face(self.dir, local_dir));
         }
