@@ -30,7 +30,7 @@ pub fn main() {
         .build()
         .unwrap();
  
-    let mut canvas = window.into_canvas().accelerated().build().unwrap();
+    let mut canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
     let mut canvas = Wrapper(canvas);
     canvas.0.set_draw_color(Color::RGB(0, 0, 0));
     canvas.0.clear();
