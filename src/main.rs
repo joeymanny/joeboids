@@ -1,5 +1,6 @@
 extern crate sdl2; 
 
+use std::thread::sleep;
 use joeboid::Boid;
 use joeboid::BoidCanvas;
 use sdl2::pixels::Color;
@@ -29,7 +30,7 @@ pub fn main() {
         .build()
         .unwrap();
  
-    let mut canvas = window.into_canvas().accelerated().build().unwrap();
+    let mut canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
     let mut canvas = Wrapper(canvas);
     canvas.0.set_draw_color(Color::RGB(0, 0, 0));
     canvas.0.clear();
@@ -44,9 +45,7 @@ pub fn main() {
         canvas.0.set_draw_color(Color::RGB(0, 0, 0));
         canvas.0.clear();
         canvas.0.set_draw_color(Color::RGB(255, 255, 255));
-        flock_master.step_fn_draw(&mut canvas, || {
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 1000));
-        });
+        flock_master.step_draw(&mut canvas);
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
