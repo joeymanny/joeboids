@@ -75,17 +75,17 @@ impl Boid {
                 flock_avg = flock_avg + boid.pos;
             }
             flock_avg = flock_avg / b.len() as f32;
-            canvas.draw_triangle(
-                (
-                    flock_avg.x.round() as i32 - 3,
-                    flock_avg.y.round() as i32 - 3,
-                ),
-                (
-                    flock_avg.x.round() as i32 + 3,
-                    flock_avg.y.round() as i32 - 3,
-                ),
-                (flock_avg.x.round() as i32, flock_avg.y.round() as i32 + 3),
-            );
+            //canvas.draw_triangle(
+            //    (
+            //        flock_avg.x.round() as i32 - 3,
+            //        flock_avg.y.round() as i32 - 3,
+            //    ),
+            //    (
+            //        flock_avg.x.round() as i32 + 3,
+            //        flock_avg.y.round() as i32 - 3,
+            //    ),
+            //    (flock_avg.x.round() as i32, flock_avg.y.round() as i32 + 3),
+            //);
         }
         for (i, (current, buffer)) in zip(c, b).enumerate() {
             let new_boid = current.step(c, &self.bounds, i, flock_avg);
@@ -212,14 +212,14 @@ impl Boidee {
             if too_close_n != 0 {
                 too_close_p = too_close_p / too_close_n as f32;
                 // avoid locals too close
-                new_dir = new_dir + (self.agility * 4.0 * avoid_point(new_dir, too_close_p));
+                new_dir = new_dir + (self.agility * 5.0 * avoid_point(new_dir, too_close_p));
             }
             local_avg = local_avg / local_num as f32;
             local_dir = local_dir / local_num as f32;
             // go towards center of local cluster
-            new_dir = new_dir + (self.agility * 2.0 * face_point(new_dir, local_avg));
+            new_dir = new_dir + (self.agility * 3.0 * face_point(new_dir, local_avg));
             // try face local average
-            new_dir = new_dir + (self.agility * 3.0 * face(new_dir, local_dir));
+            new_dir = new_dir + (self.agility * 8.0 * face(new_dir, local_dir));
         }
 
         // boid steps forward
