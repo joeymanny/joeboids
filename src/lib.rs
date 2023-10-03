@@ -221,26 +221,15 @@ impl Boidee {
             if too_close_n != 0 {
                 too_close_p = (too_close_p / too_close_n as f32);
                 // avoid locals too close
-<<<<<<< HEAD
                 new_dir = new_dir + (self.agility * 5.0 * avoid_point(new_dir, too_close_p));
-=======
-                new_pos = new_pos - (((too_close_p - self.pos) * (1.0 / (too_close_p.abs() - 0.01))) * 0.5);
-                new_dir = new_dir + (self.agility * 600.0 * dt * avoid_point(self.dir, too_close_p - self.pos));
->>>>>>> ded40f4473136c45ce06165835d64cd23aca8ae6
             }
             local_avg = local_avg / local_num as f32;
             local_avg = local_avg;
             local_dir = local_dir / local_num as f32;
             // go towards center of local cluster
-<<<<<<< HEAD
             new_dir = new_dir + (self.agility * 3.0 * face_point(new_dir, local_avg));
             // try face local average
             new_dir = new_dir + (self.agility * 8.0 * face(new_dir, local_dir));
-=======
-            new_dir = new_dir + (self.agility * 80.0 * dt * face_point(self.dir, local_avg - self.pos));
-            // try face local average
-            new_dir = new_dir + (self.agility * 800.0 * dt * face(self.dir, local_dir));
->>>>>>> ded40f4473136c45ce06165835d64cd23aca8ae6
         }
 
         // boid steps forward
