@@ -405,5 +405,15 @@ struct Grid<'a>{
 }
 impl<'a> Grid<'a>{
     fn new(data: &[Boidee], max: Vector2, fac: f32){ // TODO!
+        // make an array of cells of the right size
+        // populate the Vec's of the cells with references to the data
+        // profit
+
+        // Vec of Vec's of Vec's
+        //      0: 0|1|2|3|4
+        //      1: 0|1|2|3|4
+        //      2: 0|2|2|3|4
+        //      3: 0|2|2|3|4
+        //      4: 0--2--2--3-4
     }
 }
