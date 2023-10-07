@@ -60,11 +60,8 @@ impl Boid {
         // make sure we start knowing buffer 0 has the data
         self.switch = false;
     }
-    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
-        self.step_fn_draw(canvas, ||{})
-    }
     // calls func after calculating but before rendering
-    pub fn step_fn_draw<T: BoidCanvas, F: FnOnce() -> ()>(&mut self, canvas: &mut T, func: F) {
+    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
         // target buffer
         let b;
         // buffer containing most up-to-date boids
@@ -82,7 +79,7 @@ impl Boid {
             let new_boid = current.step(c, &self.bounds, i, dt);
             *buffer = new_boid
         }
-        func();
+        self.dt = Instant::now();
         for new_boid in c {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
@@ -110,11 +107,11 @@ impl Boid {
                 )
                 .unwrap();
         }
-        self.dt = Instant::now();
         self.switch = !self.switch;
     }
 }
 #[derive(Clone)]
+#[derive(Debug)]
 struct Boidee {
     pos: Vector2,
     dir: Angle,
@@ -243,7 +240,7 @@ impl Boidee {
         }
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct Angle (f32);
 impl Angle {
     fn new (mut x: f32) -> Angle {
@@ -399,5 +396,14 @@ fn atan2_to_total(n: f32) -> f32 {
         (2.0 * PI) + n
     } else {
         n
+    }
+}
+struct Grid<'a>{
+    min: Vector2,
+    max: Vector2,
+    cells: Vec<Vec<&'a Boid>>
+}
+impl<'a> Grid<'a>{
+    fn new(data: &[Boidee], max: Vector2, fac: f32){ // TODO!
     }
 }
