@@ -1,12 +1,12 @@
 extern crate sdl2; 
 
-use std::thread::sleep;
+// use std::thread::sleep;
 use joeboid::Boid;
 use joeboid::BoidCanvas;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::time::Duration;
+// use std::time::Duration;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
@@ -30,17 +30,17 @@ pub fn main() {
         .build()
         .unwrap();
  
-    let mut canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
+    let  canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
     let mut canvas = Wrapper(canvas);
     canvas.0.set_draw_color(Color::RGB(0, 0, 0));
     canvas.0.clear();
     canvas.0.set_draw_color(Color::RGB(255, 255, 255));
-    canvas.draw_triangle((4, 22), (66, 77), (99, 200));
+    let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.0.present();
     let mut flock_master = Boid::new(canvas.0.output_size().unwrap().clone());
     flock_master.init_boidee_random(300);
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut i = 0;
+    let i = 0;
     'running: loop {
         canvas.0.set_draw_color(Color::RGB(0, 0, 0));
         canvas.0.clear();

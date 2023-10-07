@@ -12,6 +12,10 @@ use std::ops::Div;
 use std::ops::Mul;
 use std::ops::Sub;
 use std::time::Instant;
+use std::ops::Deref;
+use std::fmt::Display;
+use std::ops::Rem;
+use std::cmp::Ordering;
 pub trait BoidCanvas {
     fn draw_triangle(
         &mut self,
@@ -131,7 +135,7 @@ impl Boid {
 #[derive(Clone)]
 struct Boidee {
     pos: Vector2,
-    dir: f32,
+    dir: Angle,
     speed: f32,
     agility: f32,
     randscope: f32,
@@ -155,7 +159,7 @@ impl Boidee {
                 r.gen::<f32>() * bounds.0 as f32,
                 r.gen::<f32>() * bounds.1 as f32,
             ),
-            dir: r.gen::<f32>() * (PI * 2.0),
+            dir: Angle::new(r.gen::<f32>() * (PI * 2.0)),
             speed: 200.0 - (r.gen::<f32>() * 10.0),
             agility: 0.01,
             randscope: 0.0,
@@ -165,7 +169,7 @@ impl Boidee {
     fn new() -> Boidee {
         Boidee {
             pos: Vector2::new(0.0, 0.0),
-            dir: 0.0,
+            dir: Angle::new(0.0),
             speed: 5.0,
             agility: 0.5,
             randscope: 0.0,
@@ -186,7 +190,7 @@ impl Boidee {
         let new_randscope;
         let new_rand;
         if self.randscope <= 0.0 {
-            new_randscope = (r.gen::<f32>() * MAX_RAND_SCOPE);
+            new_randscope = r.gen::<f32>() * MAX_RAND_SCOPE;
             new_rand = (r.gen::<f32>() - 0.5) * 1000.0;
         } else {
             new_dir = (new_dir + (self.rand * dt * self.agility)) % (2.0 * PI);
@@ -194,7 +198,7 @@ impl Boidee {
             new_rand = self.rand;
             new_dir = new_dir % (2.0 * PI);
             if new_dir < 0.0 {
-                new_dir = (2.0 * PI) + new_dir;
+                new_dir = new_dir + (2.0 * PI);
             }
         }
         let mut local_avg = Vector2::new(0.0, 0.0);
@@ -210,7 +214,7 @@ impl Boidee {
                         too_close_p = too_close_p + fren.pos;
                         too_close_n += 1;
                     }
-                    local_dir += fren.dir;
+                    local_dir =  (*fren.dir) + local_dir;
                     local_avg = local_avg + fren.pos;
                     local_num += 1;
                 }
@@ -219,17 +223,17 @@ impl Boidee {
         // all adjustments that rely on local group averages
         if local_num != 0 {
             if too_close_n != 0 {
-                too_close_p = (too_close_p / too_close_n as f32);
+                too_close_p = too_close_p / too_close_n as f32;
                 // avoid locals too close
-                new_dir = new_dir + (self.agility * 5.0 * avoid_point(new_dir, too_close_p));
+                new_dir = new_dir + (self.agility * 5.0 * avoid_point(*new_dir, too_close_p));
             }
             local_avg = local_avg / local_num as f32;
             local_avg = local_avg;
             local_dir = local_dir / local_num as f32;
             // go towards center of local cluster
-            new_dir = new_dir + (self.agility * 3.0 * face_point(new_dir, local_avg));
+            new_dir = new_dir + (self.agility * 3.0 * face_point(*new_dir, local_avg));
             // try face local average
-            new_dir = new_dir + (self.agility * 8.0 * face(new_dir, local_dir));
+            new_dir = new_dir + (self.agility * 8.0 * face(*new_dir, local_dir));
         }
 
         // boid steps forward
@@ -247,7 +251,7 @@ impl Boidee {
         }
         new_dir = new_dir % (2.0 * PI);
         if new_dir < 0.0 {
-            new_dir = (2.0 * PI) + new_dir;
+            new_dir = new_dir + (2.0 * PI) ;
         }
         Boidee {
             pos: new_pos,
@@ -259,16 +263,68 @@ impl Boidee {
         }
     }
 }
-//struct Angle {
-//    rad: f32
-//}
-//impl Angle {
-//    fn new (x: f32) -> Angle {
-//        Angle {
-//            rad: x
-//        }
-//    }
-//}
+#[derive(Clone, Copy)]
+struct Angle (f32);
+impl Angle {
+    fn new (mut x: f32) -> Angle {
+        x  %= 2.0 * PI;
+        if x < 0.0{
+            Angle((2.0 * PI) + x)
+        }else{
+            Angle(x)
+        }
+    }
+
+}
+impl Add<f32> for Angle {
+    type Output = Self;
+    fn add<>(self, other: f32) -> Self::Output {
+            Self((self.0 + other) % (2.0 * PI))
+    }
+}
+impl Sub<f32> for Angle {
+    type Output = Self;
+    fn sub(self, other: f32) -> Self{
+        let mut ans = self.0 - other;
+        ans %= PI * 2.0;
+        if ans < 0.0 {
+            Self(ans + 2.0 * PI)
+        }else{
+            Self(ans)
+        }
+    }
+}
+impl Deref for Angle{
+    type Target = f32;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl Display for Angle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+        "{}",
+        self.0
+        )
+    }
+}
+impl Rem<f32> for Angle{
+    type Output = Self;
+
+    fn rem(self, modulus: f32) -> Self::Output {
+        Angle(self.0 % modulus)
+    }
+}
+impl PartialEq<f32> for Angle {
+    fn eq(&self, other: &f32) -> bool {
+        self.0 == *other
+    }
+}
+impl PartialOrd<f32> for Angle{
+    fn partial_cmp(&self, other: &f32) -> Option<Ordering>{
+        Some(self.0.total_cmp(other))
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Vector2 {
     x: f32,
