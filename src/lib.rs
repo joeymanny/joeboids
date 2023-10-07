@@ -76,28 +76,10 @@ impl Boid {
             b = &mut self.b1;
             c = &self.b0;
         }
-        let mut flock_avg = Vector2::new(0.0, 0.0);
-        if b.len() != 0 {
-            for boid in b.iter() {
-                flock_avg = flock_avg + boid.pos;
-            }
-            flock_avg = flock_avg / b.len() as f32;
-            //canvas.draw_triangle(
-            //    (
-            //        flock_avg.x.round() as i32 - 3,
-            //        flock_avg.y.round() as i32 - 3,
-            //    ),
-            //    (
-            //        flock_avg.x.round() as i32 + 3,
-            //        flock_avg.y.round() as i32 - 3,
-            //    ),
-            //    (flock_avg.x.round() as i32, flock_avg.y.round() as i32 + 3),
-            //);
-        }
         // update all boids
         let dt = self.dt.elapsed().as_secs_f32();
         for (i, (current, buffer)) in zip(c, b).enumerate() {
-            let new_boid = current.step(c, &self.bounds, i, flock_avg, dt);
+            let new_boid = current.step(c, &self.bounds, i, dt);
             *buffer = new_boid
         }
         func();
@@ -153,7 +135,6 @@ impl fmt::Display for Boidee {
 impl Boidee {
     fn random(bounds: &(u32, u32)) -> Boidee {
         let mut r = rand::thread_rng();
-        let mut ag = r.gen::<f32>();
         Boidee {
             pos: Vector2::new(
                 r.gen::<f32>() * bounds.0 as f32,
@@ -181,7 +162,6 @@ impl Boidee {
         flock: &Vec<Boidee>,
         bounds: &(u32, u32),
         my_index: usize,
-        flock_avg: Vector2,
         dt: f32,
     ) -> Boidee {
         let mut r = rand::thread_rng();
@@ -337,13 +317,13 @@ impl Vector2 {
     fn abs(self) -> f32 {
         (self.x.powi(2) + self.y.powi(2)).sqrt()
     }
-    fn normalized(self) -> Self {
-        let fac = 1.0 / self.abs();
-        Vector2 {
-            x: self.x * fac,
-            y: self.y * fac,
-        }
-    }
+    // fn normalized(self) -> Self {
+        // let fac = 1.0 / self.abs();
+        // Vector2 {
+            // x: self.x * fac,
+            // y: self.y * fac,
+        // }
+    // }
 }
 
 impl Div<f32> for Vector2 {

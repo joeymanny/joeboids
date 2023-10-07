@@ -40,7 +40,6 @@ pub fn main() {
     let mut flock_master = Boid::new(canvas.0.output_size().unwrap().clone());
     flock_master.init_boidee_random(300);
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let i = 0;
     'running: loop {
         canvas.0.set_draw_color(Color::RGB(0, 0, 0));
         canvas.0.clear();
