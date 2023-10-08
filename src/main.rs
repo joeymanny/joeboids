@@ -37,7 +37,8 @@ pub fn main() {
     canvas.0.set_draw_color(Color::RGB(255, 255, 255));
     let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.0.present();
-    let mut flock_master = Boid::new(canvas.0.output_size().unwrap().clone());
+    let bounds = canvas.0.output_size().unwrap().clone();
+    let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
     flock_master.init_boidee_random(300);
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {

@@ -1,7 +1,7 @@
 const SIZE_FACTOR: f32 = 8.0;
 const TOO_CLOSE: f32 = 15.0;
 const LOCAL_SIZE: f32 = 50.0;
-const MAX_RAND_SCOPE: f32 = 4.0;
+const MAX_RAND_SCOPE: f32 = 3.0;
 
 use rand::Rng;
 use std::f32::consts::PI;
@@ -24,19 +24,25 @@ pub trait BoidCanvas {
         p3: (i32, i32),
     ) -> Result<(), String>;
 }
-pub struct Boid {
-    bounds: (u32, u32),
-    b0: Vec<Boidee>,
-    b1: Vec<Boidee>,
+pub struct Boid{
+    bounds: (usize, usize),
+    b0: Grid,
+    b1: Grid,
     switch: bool,
     dt: Instant,
 }
 impl Boid {
-    pub fn new(bounds: (u32, u32)) -> Boid {
+    // fn update_grid(&mut self) -> Self{
+    //     Self{
+    //         grid: Grid::from_vec(if self.switch{&self.b1} else {&self.b0}, self.bounds, LOCAL_SIZE),
+    //         ..self
+    //     }
+    // }
+    pub fn new(bounds: (usize, usize)) -> Boid {
         Boid {
             bounds: bounds,
-            b0: Vec::<Boidee>::new(),
-            b1: Vec::<Boidee>::new(),
+            b0: Grid::new(bounds, LOCAL_SIZE),
+            b1: Grid::new(bounds, LOCAL_SIZE),
             // indicates which buffer has the most up-to-date data
             // false = b0,
             // true = b1
@@ -45,27 +51,25 @@ impl Boid {
         }
     }
     pub fn init_boidee_random(&mut self, num: u32) {
-        for _ in 0..num {
-            let b = Boidee::random(&self.bounds);
-            self.b0.push(b.clone());
-            self.b1.push(b)
-        }
+        let rand = Grid::random(num, self.bounds);
+        self.b0 = rand.clone();
+        self.b1 = rand;
         self.switch = false;
+
     }
     pub fn init_boidee(&mut self, num: u32) {
-        for _ in 0..num {
-            self.b0.push(Boidee::new());
-            self.b1.push(Boidee::new());
-        }
+        let new = Grid::init_num(num, self.bounds);
+        self.b0 = new.clone();
+        self.b1 = new;
         // make sure we start knowing buffer 0 has the data
         self.switch = false;
     }
     // calls func after calculating but before rendering
     pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
         // target buffer
-        let b;
+        let b: &mut Grid;
         // buffer containing most up-to-date boids
-        let c;
+        let c: &Grid;
         if self.switch {
             b = &mut self.b0;
             c = &self.b1;
@@ -73,14 +77,25 @@ impl Boid {
             b = &mut self.b1;
             c = &self.b0;
         }
+        // update grid from buffer
         // update all boids
         let dt = self.dt.elapsed().as_secs_f32();
-        for (i, (current, buffer)) in zip(c, b).enumerate() {
-            let new_boid = current.step(c, &self.bounds, i, dt);
-            *buffer = new_boid
+        let mut buffer: Vec<Boidee> = vec![];
+        for current in c.cells.iter().flatten().flatten() {
+            let (new_boid, what_it_sees) = current.step(b, &self.bounds, dt);
+            buffer.push(new_boid);
+            if let Some(v) = what_it_sees {
+                for b in v{
+                    canvas.draw_triangle(b.pos.clone().into(), current.pos.into(), b.pos.into()).unwrap();
+                }
+            }
         }
+        let x = 1;
+        *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
+        // the buffers have been updated
         self.dt = Instant::now();
-        for new_boid in c {
+        self.switch = !self.switch;
+        for new_boid in c.cells.iter().flatten().flatten() {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
             canvas
@@ -107,11 +122,10 @@ impl Boid {
                 )
                 .unwrap();
         }
-        self.switch = !self.switch;
+        
     }
 }
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 struct Boidee {
     pos: Vector2,
     dir: Angle,
@@ -119,6 +133,7 @@ struct Boidee {
     agility: f32,
     randscope: f32,
     rand: f32,
+    chosen: bool
 }
 impl fmt::Display for Boidee {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -130,7 +145,7 @@ impl fmt::Display for Boidee {
     }
 }
 impl Boidee {
-    fn random(bounds: &(u32, u32)) -> Boidee {
+    fn random(bounds: (usize, usize)) -> Boidee {
         let mut r = rand::thread_rng();
         Boidee {
             pos: Vector2::new(
@@ -142,6 +157,7 @@ impl Boidee {
             agility: 0.01,
             randscope: 0.0,
             rand: 0.0,
+            chosen: false
         }
     }
     fn new() -> Boidee {
@@ -152,15 +168,15 @@ impl Boidee {
             agility: 0.5,
             randscope: 0.0,
             rand: 0.0,
+            chosen: false,
         }
     }
     fn step(
         &self,
-        flock: &Vec<Boidee>,
-        bounds: &(u32, u32),
-        my_index: usize,
+        flock: &Grid,
+        bounds: &(usize, usize),
         dt: f32,
-    ) -> Boidee {
+    ) -> (Boidee, Option<Vec<Boidee>>) {
         let mut r = rand::thread_rng();
         let mut new_dir = self.dir;
         let mut new_pos = Vector2::new(0.0, 0.0);
@@ -183,8 +199,13 @@ impl Boidee {
         let mut local_dir = 0.0;
         let mut too_close_p = Vector2::new(0.0, 0.0);
         let mut too_close_n = 0;
-        for (i, fren) in flock.iter().enumerate() {
-            if i != my_index {
+        let mut amogus: Option<Vec<Boidee>> = None;
+        let neighbors = flock.get_cell_neighbors(&self);
+        if self.chosen{
+            amogus = Some(neighbors.clone());
+        }
+        for fren in neighbors {
+            if fren != *self {
                 let dist = (fren.pos - self.pos).abs();
                 if dist <= LOCAL_SIZE {
                     if dist <= TOO_CLOSE {
@@ -202,15 +223,14 @@ impl Boidee {
             if too_close_n != 0 {
                 too_close_p = too_close_p / too_close_n as f32;
                 // avoid locals too close
-                new_dir = new_dir + (self.agility * 5.0 * avoid_point(*new_dir, too_close_p));
+                new_dir = new_dir + (self.agility * dt * 0.0 * avoid_point(*new_dir, too_close_p));
             }
             local_avg = local_avg / local_num as f32;
-            local_avg = local_avg;
             local_dir = local_dir / local_num as f32;
             // go towards center of local cluster
-            new_dir = new_dir + (self.agility * 3.0 * face_point(*new_dir, local_avg));
+            new_dir = new_dir + (self.agility * 0.0 * dt * face_point(*new_dir, local_avg));
             // try face local average
-            new_dir = new_dir + (self.agility * 8.0 * face(*new_dir, local_dir));
+            new_dir = new_dir + (self.agility * 1000.0 * dt * face(*new_dir, local_dir));
         }
 
         // boid steps forward
@@ -230,17 +250,18 @@ impl Boidee {
         if new_dir < 0.0 {
             new_dir = new_dir + (2.0 * PI) ;
         }
-        Boidee {
+        (Boidee {
             pos: new_pos,
             dir: new_dir,
-            speed: self.speed.clone(),
-            agility: self.agility.clone(),
+            speed: self.speed,
+            agility: self.agility,
             randscope: new_randscope,
             rand: new_rand,
-        }
+            chosen: self.chosen
+        }, amogus)
     }
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Angle (f32);
 impl Angle {
     fn new (mut x: f32) -> Angle {
@@ -251,7 +272,6 @@ impl Angle {
             Angle(x)
         }
     }
-
 }
 impl Add<f32> for Angle {
     type Output = Self;
@@ -306,6 +326,11 @@ impl PartialOrd<f32> for Angle{
 struct Vector2 {
     x: f32,
     y: f32,
+}
+impl From<Vector2> for (i32, i32){
+    fn from(val: Vector2) -> Self{
+        (val.x.floor() as i32, val.y.floor() as i32)
+    }
 }
 impl Vector2 {
     fn new(x: f32, y: f32) -> Vector2 {
@@ -398,22 +423,124 @@ fn atan2_to_total(n: f32) -> f32 {
         n
     }
 }
-struct Grid<'a>{
-    min: Vector2,
-    max: Vector2,
-    cells: Vec<Vec<&'a Boid>>
+#[derive(Clone, Debug)]
+struct Grid{
+    max: (usize, usize),
+    cells: Vec<Vec<Vec<Boidee>>>,
+    fac: f32,
 }
-impl<'a> Grid<'a>{
-    fn new(data: &[Boidee], max: Vector2, fac: f32){ // TODO!
+impl Grid{
+    fn new(max: (usize,usize), fac: f32) -> Grid{
+        let cells: Vec<Vec<Vec<Boidee>>> = init_grid_vec(max, fac);
+        Self { max, cells, fac }
+    }
+    fn from_vec(data: Vec<Boidee>, max: (usize, usize), fac: f32) -> Grid{ // DONE!
         // make an array of cells of the right size
         // populate the Vec's of the cells with references to the data
         // profit
 
-        // Vec of Vec's of Vec's
+        // Vec of Vec's of Vec's of Boidees
         //      0: 0|1|2|3|4
-        //      1: 0|1|2|3|4
-        //      2: 0|2|2|3|4
-        //      3: 0|2|2|3|4
-        //      4: 0--2--2--3-4
+        //      1: 0|1|2|3|4 <-- each of these is a Vec of Boidee's
+        //      2: 0|1|2|3|4
+        //      3: 0|1|2|3|4
+        //      4: 0|1|2|3|4
+
+        // empty 3D array (3rd dimension for Boidees)
+        let mut buf: Vec<Vec<Vec<Boidee>>> = init_grid_vec(max, fac);
+        // fill them with data
+        // this will panic is max is too small, so make sure max isn't too small
+        for boidee in data{
+            let adj_x = (boidee.pos.x / fac).floor() as usize;
+            let adj_y = (boidee.pos.y / fac).floor() as usize;
+            buf[adj_x][adj_y].push(boidee);
+        }
+        Self { max, cells: buf, fac }
     }
+    fn get_cell_neighbors(&self, sub: &Boidee) -> Vec<Boidee>{
+        // we are assuming that all Boidees have positions within the max
+        // we can assume this because these (should be) both coordinated by Boid
+        // just don't mess up Boid and it'll be fine
+        let mut rtrn: Vec<Boidee> = vec![];
+        let x_adj: usize = (sub.pos.x / self.fac as f32).floor() as usize;
+        let y_adj: usize = (sub.pos.y / self.fac as f32).floor() as usize;
+        let sub_cell = self.cells[x_adj][y_adj].clone();
+        let x_0 = x_adj <= 1;
+        let y_0 = y_adj <= 1;
+        let y_max = y_adj >= ((self.max.1 - 1) as f32 / self.fac).floor() as usize;
+        let x_max = x_adj >= ((self.max.0 - 1) as f32 / self.fac).floor() as usize;
+        
+        //left
+            //upper left
+            //lower left
+        //right
+            //uppper right
+            //lower left
+        //up
+        //down
+        if !x_0{
+            // left
+            rtrn.append(&mut self.cells[x_adj - 1][y_adj].clone());
+            if !y_0{
+                //upper left
+                rtrn.append(&mut self.cells[x_adj - 1][y_adj - 1].clone());
+            }
+            if !y_max{
+                // lower left
+                rtrn.append(&mut self.cells[x_adj - 1][y_adj + 1].clone());
+            }
+        }
+        if !x_max{
+            //right
+            rtrn.append(&mut self.cells[x_adj + 1][y_adj].clone());
+            if !y_0{
+                // upper right
+                rtrn.append(&mut self.cells[x_adj + 1][y_adj - 1].clone());
+            }
+            if !y_max{
+                // lower right
+                rtrn.append(&mut self.cells[x_adj + 1][y_adj + 1].clone());
+            }
+        }
+        if !y_max{
+            // down
+            rtrn.append(&mut self.cells[x_adj][y_adj + 1].clone());
+        }
+        if !y_0{
+            // up
+            rtrn.append(&mut self.cells[x_adj][y_adj - 1].clone());
+        }
+        // we also need our own cell of course
+        rtrn.append(&mut sub_cell.clone());
+
+        rtrn
+    }
+    fn random(num: u32, bounds: (usize, usize)) -> Grid{
+        let mut v:Vec<Boidee> = vec![];
+        for _ in 0..(num
+        ){
+            v.push(Boidee::random(bounds));
+        }
+        v[0].chosen = true; // TODO -------------------------------------- REMOVE THIS!
+        Grid::from_vec(v, bounds, LOCAL_SIZE)
+
+    }
+    fn init_num(num: u32, bounds: (usize, usize)) -> Grid{
+        let mut v:Vec<Boidee> = vec![];
+        for _ in 0..num{
+            v.push(Boidee::new());
+        }
+        Grid::from_vec(v, bounds, LOCAL_SIZE)
+    }
+}
+fn init_grid_vec(max: (usize, usize), fac: f32) -> Vec<Vec<Vec<Boidee>>> {
+    let mut x_array: Vec<Vec<Vec<Boidee>>> = Vec::new();
+    for _ in 0..((max.0 as f32 / fac).floor() as usize){
+        let mut y_array: Vec<Vec<Boidee>> = Vec::new();
+        for _ in 0..((max.1 as f32 / fac).floor() as usize){
+            y_array.push(Vec::new());
+        }
+        x_array.push(y_array);
+    }
+    x_array
 }
