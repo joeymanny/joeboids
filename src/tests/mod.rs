@@ -1,7 +1,5 @@
-use super::*; 
-fn absolute_diff(x:f32, y:f32) -> f32{
-    (x - y).abs()
-}                                                                                                                                                                                                                                                                                                                                                  
+use crate::angle::Angle; 
+use std::f32::consts::PI;                                                                                                                                                                                                                                                                                                                                               
 #[test]
 fn face_test_lesser(){
     assert_eq!(

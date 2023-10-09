@@ -97,3 +97,20 @@ impl PartialOrd<f32> for Angle{
         Some(self.0.total_cmp(other))
     }
 }
+impl Add<Angle> for f32{
+    type Output = Angle;
+    fn add(self, rhs: Angle) -> Self::Output {
+        Angle((rhs.0 + self) % (2.0 * PI))
+    }
+}
+impl Sub<Angle> for f32{
+    type Output = Angle;
+    fn sub(self, rhs: Angle) -> Self::Output {
+        let rtrn = (rhs.0 - self) % (2.0 * PI);
+        if rtrn < 0.0{
+            Angle((2.0 * PI) - rtrn)
+        }else {
+            Angle(rtrn)
+        }
+    }
+}

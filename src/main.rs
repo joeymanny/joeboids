@@ -1,7 +1,7 @@
 extern crate sdl2; 
 
 // use std::thread::sleep;
-use joeboid::Boid;
+use joeboid::boid::Boid;
 use joeboid::BoidCanvas;
 use sdl2::pixels::Color;
 use sdl2::event::Event;

@@ -1,4 +1,5 @@
-use crate::angle::Angle;
+use crate::LOCAL_SIZE;
+use crate::boidee::Boidee;
 #[derive(Clone, Debug)]
 pub struct Grid{
     max: (usize, usize),
@@ -119,22 +120,5 @@ impl Grid{
             x_array.push(y_array);
         }
         x_array
-    }
-}
-impl Add<Angle> for f32{
-    type Output = Angle;
-    fn add(self, rhs: Angle) -> Self::Output {
-        Angle((rhs.0 + self) % (2.0 * PI))
-    }
-}
-impl Sub<Angle> for f32{
-    type Output = Angle;
-    fn sub(self, rhs: Angle) -> Self::Output {
-        let rtrn = (rhs.0 - self) % (2.0 * PI);
-        if rtrn < 0.0{
-            Angle((2.0 * PI) - rtrn)
-        }else {
-            Angle(rtrn)
-        }
     }
 }
