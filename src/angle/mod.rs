@@ -1,6 +1,6 @@
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Angle (f32);
+pub struct Angle (pub f32);
 impl Angle {
     pub fn new (mut x: f32) -> Angle {
         x  %= 2.0 * PI;

@@ -39,7 +39,7 @@ pub fn main() {
     canvas.0.present();
     let bounds = canvas.0.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
-    flock_master.init_boidee_random(800);
+    flock_master.init_boidee_random(400);
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {
         canvas.0.set_draw_color(Color::RGB(0, 0, 0));

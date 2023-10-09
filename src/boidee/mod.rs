@@ -52,19 +52,8 @@ impl Boidee {
         flock: &Grid,
         bounds: &(usize, usize),
     ) -> (Boidee, Option<Vec<Boidee>>) {
-        let mut r = rand::thread_rng();
         let mut new_dir = self.dir;
         let mut new_pos = Vector2::new(0.0, 0.0);
-        let new_randscope;
-        let new_rand;
-        if self.randscope <= 0 {
-            new_randscope = (r.gen::<f32>() * MAX_RAND_SCOPE as f32) as usize;
-            new_rand = (r.gen::<f32>() - 0.5) / 10.0;
-        } else {
-            new_dir = new_dir + self.rand;
-            new_randscope = self.randscope - 1;
-            new_rand = self.rand;
-        }
         let mut local_avg = Vector2::new(0.0, 0.0);
         let mut local_num = 0;
         let mut local_dir = Angle::new(0.0);
@@ -108,9 +97,20 @@ impl Boidee {
                 // new_pos = (local_avg - self.pos) / 1000.0;
             // }
             // try face local average
-            new_dir = Angle::new(new_dir.face(local_dir));
+            new_dir = Angle::new(*new_dir + (self.dir.face(local_dir / local_num as f32) / 50.0));
         }
+        let mut r = rand::thread_rng();
 
+        let new_randscope= self.randscope;
+        let new_rand = self.rand;
+        // if self.randscope <= 0 {
+        //     new_randscope = (r.gen::<f32>() * MAX_RAND_SCOPE as f32) as usize;
+        //     new_rand = (r.gen::<f32>() - 0.5) / 10.0;
+        // } else {
+        //     new_dir = new_dir + self.rand;
+        //     new_randscope = self.randscope - 1;
+        //     new_rand = self.rand;
+        // }
         // boid steps forward
         new_pos =
             new_pos + self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);

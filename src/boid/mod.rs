@@ -61,7 +61,7 @@ impl Boid {
         // update all boids
         let mut buffer: Vec<Boidee> = vec![];
         for current in c.cells.iter().flatten().flatten() {
-            let (new_boid, what_it_sees) = current.step(b, &self.bounds);
+            let (new_boid, what_it_sees) = current.step(c, &self.bounds);
             buffer.push(new_boid);
             if let Some(v) = what_it_sees {
                 for b in v{
@@ -103,9 +103,9 @@ impl Boid {
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(self.dt.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            println!("early! {:?}", v);
+            // println!("early! {:?}", v);
         }else{
-            println!("late! {:?}", self.dt.elapsed() - Duration::from_nanos(SCHEDULE_NANOS));
+            // println!("late! {:?}", self.dt.elapsed() - Duration::from_nanos(SCHEDULE_NANOS));
         }
         
     }
