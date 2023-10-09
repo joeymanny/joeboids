@@ -24,7 +24,7 @@ impl Grid{
         //      4: 0|1|2|3|4
 
         // empty 3D array (3rd dimension for Boidees)
-        let mut buf: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec(max, fac);
+        let mut buf: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec((max.0, max.1), fac);
         // fill them with data
         // this will panic is max is too small, so make sure max isn't too small
         for boidee in data{
@@ -44,8 +44,8 @@ impl Grid{
         let sub_cell = self.cells[x_adj][y_adj].clone();
         let x_0 = x_adj <= 1;
         let y_0 = y_adj <= 1;
-        let y_max = y_adj >= ((self.max.1 - 1) as f32 / self.fac).floor() as usize;
-        let x_max = x_adj >= ((self.max.0 - 1) as f32 / self.fac).floor() as usize;
+        let y_max = y_adj >= ((self.max.1) as f32 / self.fac).floor() as usize;
+        let x_max = x_adj >= ((self.max.0) as f32 / self.fac).floor() as usize;
         
         //left
             //upper left
@@ -66,6 +66,8 @@ impl Grid{
                 // lower left
                 rtrn.append(&mut self.cells[x_adj - 1][y_adj + 1].clone());
             }
+        }else{
+            // rtrn.append(&mut self.cells[self.cells.len() - 1][y_adj].clone());
         }
         if !x_max{
             //right
@@ -89,6 +91,7 @@ impl Grid{
         }
         // we also need our own cell of course
         rtrn.append(&mut sub_cell.clone());
+        rtrn.append(&mut self.cells[self.cells.len() - 1][self.cells[self.cells.len() - 1].len() - 1].clone());
 
         rtrn
     }
@@ -112,9 +115,9 @@ impl Grid{
 
     fn init_grid_vec(max: (usize, usize), fac: f32) -> Vec<Vec<Vec<Boidee>>> {
         let mut x_array: Vec<Vec<Vec<Boidee>>> = Vec::new();
-        for _ in 0..(((max.0 as f32 / fac) + 1.0).floor() as usize){
+        for _ in 0..(((max.0 as f32 / fac) + 1.0).ceil() as usize){
             let mut y_array: Vec<Vec<Boidee>> = Vec::new();
-            for _ in 0..(((max.1 as f32 / fac) + 1.0).floor() as usize){
+            for _ in 0..(((max.1 as f32 / fac) + 1.0).ceil() as usize){
                 y_array.push(Vec::new());
             }
             x_array.push(y_array);

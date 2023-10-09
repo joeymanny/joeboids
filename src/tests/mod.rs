@@ -1,3 +1,4 @@
+use crate::angle::rad;
 use crate::angle::Angle; 
 use std::f32::consts::PI;                                                                                                                                                                                                                                                                                                                                               
 #[test]
@@ -31,12 +32,21 @@ fn face_test_greater_offset_1_pi(){
 
 }
 #[test]
+fn face_test_greater_offset_1_pi_inverse(){
+    assert_eq!(
+        Angle::new(PI).face(Angle::new(PI/2.0))
+        ,
+        PI/-2.0
+    );
+
+}
+#[test]
 fn face_test_identity_1(){
     let subject = Angle::new(2.6);
     let target = Angle::new(3.9);
     assert_eq!(
         target,
-        *subject + subject.face(target)
+        subject + subject.face(target)
     )
 }
 #[test]
@@ -45,16 +55,16 @@ fn face_test_identity_2(){
     let target = Angle::new(2.6);
     assert_eq!(
         target,
-        *subject + subject.face(target)
+        subject + subject.face(target)
     )
 }
 #[test]
 fn face_test_identity_3(){
-    let subject = Angle::new((2.0 * PI) - 0.3 * PI);
-    let target = Angle::new(0.3 * PI);
+    let subject = Angle::new(rad(360.0) - rad(40.0));
+    let target = Angle::new(rad(40.0));
     assert_eq!(
-        target,
-        subject + Angle(subject.face(target))
+        format!("{:.4}", target.0),
+        format!("{:.4}", (subject + Angle(subject.face(target))).0)
     )
 }
 #[test] 
@@ -84,4 +94,37 @@ fn div_other_side(){
         Angle::new(1.75 * PI),
         Angle::new(1.5 * PI) / 2.0
     )
+}
+#[test]
+fn rad_180(){
+    assert_eq!(
+        PI,
+        rad(180.0)
+    );
+}
+#[test]
+fn angle_add_f32(){
+    assert_eq!(
+        format!("{:.4}", Angle(rad(10.0)).0),
+        format!("{:.4}", (Angle(rad(350.0)) + rad(20.0)).0)
+    );
+}
+#[test]
+fn face_no_op_360(){
+    assert_eq!(
+        0.0,
+        Angle::new(rad(360.0)).face(Angle::new(rad(360.0)))
+    );
+}
+#[test]
+fn face_no_op_0(){
+    assert_eq!(
+        0.0,
+        Angle::new(rad(0.0)).face(Angle::new(rad(0.0)))
+    );
+}
+// #[test]
+fn undo_atan2_1(){
+       todo!();
+       
 }

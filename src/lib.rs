@@ -9,7 +9,7 @@ mod boidee;
 pub const SIZE_FACTOR: f32 = 8.0;
 pub const TOO_CLOSE: f32 = 15.0;
 pub const LOCAL_SIZE: f32 = 50.0;
-pub const MAX_RAND_SCOPE: f32 = 3.0;
+pub const MAX_RAND_SCOPE: usize = 100;
 pub const  SCHEDULE_NANOS: u64 = 1_000_000;
 use std::f32::consts::PI;
 use std::fmt;

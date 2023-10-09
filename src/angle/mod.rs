@@ -1,4 +1,7 @@
 use super::*;
+
+const PI_OVER_180: f32 = PI/180.0;
+ 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Angle (pub f32);
 impl Angle {
@@ -13,13 +16,21 @@ impl Angle {
     pub fn face(self, wish: Angle) -> f32 {
         let x = wish.0 - self.0;
         if x.abs() <= PI{
-            x
+            x % (2.0 * PI)
         }else {
-            x - (2.0 * PI) 
+            (x - (2.0 * PI)) % (2.0 * PI)
         }
     
     }
 }
+pub fn rad<T: Into<f32>>(n: T) -> f32{
+    n.into() * PI_OVER_180
+}
+// pub fn atan2_to_angle(r: f32) -> Angle{
+
+// }
+
+// trait implementations
 impl Add<f32> for Angle {
     type Output = Self;
     fn add<>(self, other: f32) -> Self::Output {
