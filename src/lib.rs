@@ -6,11 +6,10 @@ mod angle;
 pub mod boid;
 mod vector2;
 mod boidee;
-pub const SIZE_FACTOR: f32 = 8.0;
 pub const TOO_CLOSE: f32 = 15.0;
 pub const LOCAL_SIZE: f32 = 50.0;
 pub const MAX_RAND_SCOPE: usize = 100;
-pub const  SCHEDULE_NANOS: u64 = 1_000_000;
+pub const  SCHEDULE_NANOS: u64 = 16_666_666; // 120 fps
 use std::f32::consts::PI;
 use std::fmt;
 use std::ops::Add;

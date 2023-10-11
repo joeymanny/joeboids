@@ -1,3 +1,5 @@
+const RAND_BOID_SPEED: f32 = 4.0;
+const RAND_BOID_SPEED_VARIATION: f32 = 0.5;
 use crate::vector2::Vector2;
 use crate::angle::Angle;
 use crate::{MAX_RAND_SCOPE, TOO_CLOSE, LOCAL_SIZE};
@@ -31,7 +33,7 @@ impl Boidee {
                 r.gen::<f32>() * bounds.1 as f32,
             ),
             dir: Angle::new(r.gen::<f32>() * (PI * 2.0)),
-            speed: 2.0 - (r.gen::<f32>() * 0.3),
+            speed: RAND_BOID_SPEED - ((r.gen::<f32>() - 0.5) * (RAND_BOID_SPEED_VARIATION * 2.0)),
             randscope: 0,
             rand: 0.0,
             chosen: false
@@ -51,9 +53,10 @@ impl Boidee {
         &self,
         flock: &Grid,
         bounds: &(usize, usize),
+        flock_scare: Option<f32>
     ) -> (Boidee, Option<Vec<Boidee>>) {
         let mut new_dir = self.dir;
-        let mut new_pos = Vector2::new(0.0, 0.0);
+        let mut move_by = Vector2::new(0.0, 0.0);
         let mut local_avg = Vector2::new(0.0, 0.0);
         let mut local_num = 0;
         let mut local_dir = self.dir;
@@ -84,18 +87,22 @@ impl Boidee {
             }
         }
         // all adjustments that rely on local group averages
-        // new_pos = self.pos;
         if local_num != 0 {
             if too_close_n != 0 {
                 too_close_p = too_close_p / too_close_n as f32;
                 // avoid locals too close
-                new_pos = (too_close_p - self.pos) / -21.0;
+                move_by = move_by + ((too_close_p) - self.pos) / -10.0;
             }
-            // go towards center of local cluster
             local_avg = local_avg / local_num as f32;
-            new_pos = new_pos + (local_avg - self.pos) / 80.0;
-            // try face local average
-            new_dir = new_dir + Angle::new(self.dir.face(local_dir) / 7.0);
+            if let Some(f) = flock_scare{
+                // go towards center of local cluster
+                move_by = move_by + ((local_avg - self.pos) / 80.0 * f);
+            }else{
+                move_by = move_by + ((local_avg - self.pos) / 80.0);
+
+                // try face local average
+                new_dir = new_dir + Angle::new(self.dir.face(local_dir) / 7.0);
+            }
         }
         let mut r = rand::thread_rng();
 
@@ -110,24 +117,24 @@ impl Boidee {
             new_rand = self.rand;
         }
         // boid steps forward
-        new_pos =
-            new_pos + self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
+        move_by =
+            move_by + self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
 
         // all modifications to pos & dir should be done before this point
-        new_pos.x = new_pos.x % bounds.0 as f32;
-        new_pos.y = new_pos.y % bounds.1 as f32;
-        if new_pos.x < 0.0 {
-            new_pos.x += bounds.0 as f32;
+        move_by.x = move_by.x % bounds.0 as f32;
+        move_by.y = move_by.y % bounds.1 as f32;
+        if move_by.x < 0.0 {
+            move_by.x += bounds.0 as f32;
         }
-        if new_pos.y < 0.0 {
-            new_pos.y += bounds.1 as f32;
+        if move_by.y < 0.0 {
+            move_by.y += bounds.1 as f32;
         }
         new_dir = new_dir % (2.0 * PI);
         if new_dir < 0.0 {
             new_dir = new_dir + (2.0 * PI) ;
         }
         (Boidee {
-            pos: new_pos,
+            pos: move_by,
             dir: new_dir,
             speed: self.speed,
             randscope: new_randscope,

@@ -39,22 +39,26 @@ pub fn main() {
     canvas.0.present();
     let bounds = canvas.0.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
-    flock_master.init_boidee_random(4000);
+    flock_master.init_boidee_random(1000);
     let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut flock_scare = None;
     'running: loop {
-        canvas.0.set_draw_color(Color::RGB(0, 0, 0));
-        canvas.0.clear();
-        canvas.0.set_draw_color(Color::RGB(255, 255, 255));
-        flock_master.step_draw(&mut canvas);
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
+                Event::KeyDown { keycode: Some(Keycode::Space), ..} => { flock_scare = Some(-1.0)},
+                Event::KeyUp { keycode: Some(Keycode::Space), ..} => {flock_scare = None},
                 _ => {}
             }
         }
+        canvas.0.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.0.clear();
+        canvas.0.set_draw_color(Color::RGB(255, 255, 255));
+        flock_master.flock_scare(flock_scare);
+        flock_master.step_draw(&mut canvas);
         // The rest of the game loop goes here...
     canvas.0.present();
     }

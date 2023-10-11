@@ -1,6 +1,8 @@
+pub const SIZE_FACTOR: f32 = 8.0;
+
 use crate::boidee::Boidee;
 use crate::grid::Grid;
-use crate::{LOCAL_SIZE, SIZE_FACTOR, SCHEDULE_NANOS};
+use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
 use std::f32::consts::PI;
@@ -10,6 +12,7 @@ pub struct Boid{
     b1: Grid,
     switch: bool,
     dt: Instant,
+    flock_scare: Option<f32>
 }
 impl Boid {
     // fn update_grid(&mut self) -> Self{
@@ -28,6 +31,7 @@ impl Boid {
             // true = b1
             switch: false,
             dt: Instant::now(),
+            flock_scare: None
         }
     }
     pub fn init_boidee_random(&mut self, num: u32) {
@@ -44,8 +48,11 @@ impl Boid {
         // make sure we start knowing buffer 0 has the data
         self.switch = false;
     }
-    // calls func after calculating but before rendering
+    pub fn flock_scare(&mut self, factor: Option<f32>){
+        self.flock_scare = factor;
+    }
     pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
+        let func_timer = Instant::now();
         // target buffer
         let b: &mut Grid;
         // buffer containing most up-to-date boids
@@ -60,19 +67,22 @@ impl Boid {
         // update grid from buffer
         // update all boids
         let mut buffer: Vec<Boidee> = vec![];
+        let step_timer = Instant::now(); // !!!
         for current in c.cells.iter().flatten().flatten() {
-            let (new_boid, what_it_sees) = current.step(c, &self.bounds);
+            let (new_boid, what_chosen_sees) = current.step(c, &self.bounds, self.flock_scare);
             buffer.push(new_boid);
-            if let Some(v) = what_it_sees {
+            if let Some(v) = what_chosen_sees {
                 for b in v{
                     canvas.draw_triangle(b.pos.clone().into(), current.pos.into(), b.pos.into()).unwrap();
                 }
             }
         }
+        println!("steping boids took {:?}", step_timer.elapsed()); // !!!
         *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
         // the buffers have been updated
         self.dt = Instant::now();
         self.switch = !self.switch;
+        let draw_timer = Instant::now();
         for new_boid in c.cells.iter().flatten().flatten() {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
@@ -100,13 +110,15 @@ impl Boid {
                 )
                 .unwrap();
         }
-        let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(self.dt.elapsed());
+        println!("drawing boids took {:?}", draw_timer.elapsed());// !!!
+        let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            // println!("early! {:?}", v);
+            println!("entire step_draw function was early by {:?}", v);
         }else{
-            // println!("late! {:?}", self.dt.elapsed() - Duration::from_nanos(SCHEDULE_NANOS));
+            println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS));
         }
+        println!("delta-time was {:?}", self.dt.elapsed());
         
     }
 }
