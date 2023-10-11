@@ -41,13 +41,12 @@ pub fn main() {
     canvas.0.present();
     let bounds = canvas.0.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
-    flock_master.init_boidee_random(100);
+    flock_master.init_boidee_random(1000);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
 
     'running: loop {
         canvas.0.set_draw_color(Color::RGB(255, 255, 255));
-
         for event in event_pump.poll_iter(){
             match event {
                 Event::Quit {..} |
@@ -62,15 +61,17 @@ pub fn main() {
             canvas.0.clear();
             canvas.0.set_draw_color(Color::RGB(255, 0, 0));
             flock_scare = match flock_scare{
-                None => Some(-10.0),
-                Some(v) => if v < -1.0{ Some(v + 0.1)}else{ Some(v) }
+                None => Some(-20.0),
+                Some(v) => if v < -1.0{ Some(v + 1.0)}else{ Some(v) }
             } 
         }else{ // space is undepressed
             // if it's none, our job is already done
             if let Some(_) = flock_scare {
                 flock_scare = None;
-                canvas.0.set_draw_color(Color::RGB(0, 0, 0));
             }
+            canvas.0.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.0.clear();
+            canvas.0.set_draw_color(Color::RGB(255, 255, 255));
         }
         // canvas.0.set_draw_color(Color::RGB(0, 0, 0));
         // canvas.0.clear();
@@ -78,6 +79,6 @@ pub fn main() {
         flock_master.flock_scare(flock_scare);
         flock_master.step_draw(&mut canvas);
         // The rest of the game loop goes here...
-    canvas.0.present();
+        canvas.0.present();
     }
 }
