@@ -77,7 +77,7 @@ impl Boid {
                 }
             }
         }
-        println!("steping boids took {:?}", step_timer.elapsed()); // !!!
+        // println!("steping boids took {:?}", step_timer.elapsed()); // !!!
         *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
         // the buffers have been updated
         self.dt = Instant::now();
@@ -110,15 +110,15 @@ impl Boid {
                 )
                 .unwrap();
         }
-        println!("drawing boids took {:?}", draw_timer.elapsed());// !!!
+        // println!("drawing boids took {:?}", draw_timer.elapsed());// !!!
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            println!("entire step_draw function was early by {:?}", v);
+            // println!("entire step_draw function was early by {:?}", v); // !!!
         }else{
-            println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS));
+            // println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS)); // !!!
         }
-        println!("delta-time was {:?}", self.dt.elapsed());
+        // println!("delta-time was {:?}", self.dt.elapsed()); // !!!
         
     }
 }
