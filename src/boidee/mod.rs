@@ -64,6 +64,7 @@ impl Boidee {
         let mut too_close_n = 0;
         let mut amogus: Option<Vec<Boidee>> = None;
         let neighbors = flock.get_cell_neighbors(&self);
+        let mut used_speed = self.speed;
         if self.chosen{
             amogus = Some(Vec::new());
         }
@@ -97,6 +98,7 @@ impl Boidee {
             if let Some(f) = flock_scare{
                 // go towards center of local cluster
                 move_by = move_by + ((local_avg - self.pos) / 80.0 * f);
+                used_speed = (f.abs() / 20.0) * used_speed + 6.0; // flock_scare affects this a bit
             }else{
                 move_by = move_by + ((local_avg - self.pos) / 80.0);
 
@@ -118,7 +120,7 @@ impl Boidee {
         }
         // boid steps forward
         move_by =
-            move_by + self.pos + Vector2::new(new_dir.cos() * self.speed, new_dir.sin() * self.speed);
+            move_by + self.pos + Vector2::new(new_dir.cos() * used_speed, new_dir.sin() * used_speed);
 
         // all modifications to pos & dir should be done before this point
         move_by.x = move_by.x % bounds.0 as f32;
