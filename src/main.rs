@@ -1,7 +1,5 @@
 extern crate sdl2; 
 
-use std::io::Write;
-
 // use std::thread::sleep;
 use joeboid::boid::Boid;
 use joeboid::BoidCanvas;
