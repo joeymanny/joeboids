@@ -9,6 +9,7 @@ use sdl2::keyboard::Keycode;
 // use std::time::Duration;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
+use std::ops::{Deref, DerefMut};
 
 struct Wrapper(Canvas<Window>);
 
@@ -19,6 +20,17 @@ impl BoidCanvas for Wrapper {
         self.0.draw_line(p2, p3)?;
         self.0.draw_line(p3, p1)?;
         Ok(())
+    }
+}
+impl Deref for Wrapper{
+    type Target = Canvas<Window>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Wrapper{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 pub fn main() {
@@ -32,51 +44,65 @@ pub fn main() {
  
     let  canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
     let mut canvas = Wrapper(canvas);
-    canvas.0.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.0.clear();
-    canvas.0.set_draw_color(Color::RGB(255, 255, 255));
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.clear();
+    canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
-    canvas.0.present();
-    let bounds = canvas.0.output_size().unwrap().clone();
+    canvas.present();
+    let bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
     flock_master.init_boidee_random(1000);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
 
     'running: loop {
-        canvas.0.set_draw_color(Color::RGB(255, 255, 255));
+        // see if at any point they tried to leave the application
+        // will be added to queue so it'll work even between checks
         for event in event_pump.poll_iter(){
             match event {
+                // with (x) button
                 Event::Quit {..} |
+                // or esc key
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
-                _ => {}
+                _ => ()
             }
         }
+        // set draw color to white
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+
+        // if space is being pressed this frame, panic. won't be added to queue, 
+        // only happens if it is being pressed RIGHT NOW. more responsvie
         if event_pump.keyboard_state().is_scancode_pressed(sdl2::keyboard::Scancode::Space){
-            canvas.0.set_draw_color(Color::RGB(0, 0, 0));
-            canvas.0.clear();
-            canvas.0.set_draw_color(Color::RGB(255, 0, 0));
+            // clear screen
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.clear();
+            // set draw color to red for panic mode
+            canvas.set_draw_color(Color::RGB(255, 0, 0));
+            // update flock scare factor
             flock_scare = match flock_scare{
+                // starts off at -20.0
                 None => Some(-20.0),
+                // decreases (increases) to -1.0
                 Some(v) => if v < -1.0{ Some(v + 1.0)}else{ Some(v) }
             } 
         }else{ // space is undepressed
-            // if it's none, our job is already done
+            // reset flock scare if it isn't already
             if let Some(_) = flock_scare {
                 flock_scare = None;
             }
-            canvas.0.set_draw_color(Color::RGB(0, 0, 0));
-            canvas.0.clear();
-            canvas.0.set_draw_color(Color::RGB(255, 255, 255));
+            // clear canvas
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.clear();
+            // set color to white for normal mode
+            canvas.set_draw_color(Color::RGB(255, 255, 255));
         }
-        // canvas.0.set_draw_color(Color::RGB(0, 0, 0));
-        // canvas.0.clear();
-        // canvas.0.set_draw_color(Color::RGB(255, 255, 255));
+        // tell the Boid what its new flock scare is
         flock_master.flock_scare(flock_scare);
+        // step Boidees and draw to canvas
         flock_master.step_draw(&mut canvas);
-        // The rest of the game loop goes here...
-        canvas.0.present();
+        // render
+        canvas.present();
     }
 }
