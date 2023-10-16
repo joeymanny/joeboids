@@ -72,18 +72,29 @@ impl Boid {
         let mut buffer: Vec<Boidee> = vec![];
         // flattened iterator over boidees
         // let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
-        for current in c.cells.iter().flatten().flatten() {
-            let (
-                new_boid
-                , what_chosen_sees)
-                = current.step(c, &self.bounds, self.flock_scare);
-            buffer.push(new_boid);
-            if let Some(v) = what_chosen_sees {
-                for b in v{
-                    canvas.draw_triangle(b.pos.clone().into(), current.pos.into(), b.pos.into()).unwrap();
-                }
+        let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
+        std::thread::scope(|scope: &std::thread::Scope<'_, '_>|{
+            let thread_bounds = self.bounds.clone();
+            let thread_flock_scare = self.flock_scare.clone();
+            let mut handles = vec![];
+            let f = (flattened_refs.len() as f32 / num_cpus::get() as f32).ceil() as usize;
+            for task in flattened_refs.chunks(f){
+                handles.push(scope.spawn(move ||{
+                    let mut ret = vec![];
+                    for boidee in task{
+                        ret.push(boidee.step(c, &thread_bounds, thread_flock_scare));
+                    }
+                    ret
+                }));
             }
-        }
+            for handle in handles{
+                buffer.append(&mut handle.join().unwrap());
+            }
+        });
+        // for current in c.cells.clone().into_iter().flatten().flatten() {
+        //     let new_boid= current.step(c, &self.bounds, self.flock_scare);
+        //     buffer.push(new_boid);
+        // }
         *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
         // the buffers have been updated
         //self.dt = Instant::now();
@@ -119,9 +130,9 @@ impl Boid {
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            // println!("entire step_draw function was early by {:?}", v); // !!!
+            println!("entire step_draw function was early by {:?}", v); // !!!
         }else{
-            // println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS)); // !!!
+            println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS)); // !!!
         }
         // println!("delta-time was {:?}", self.dt.elapsed()); // !!!
         

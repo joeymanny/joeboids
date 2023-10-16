@@ -101,7 +101,6 @@ impl Grid{
         ){
             v.push(Boidee::random(bounds));
         }
-        v[0].chosen = true; // TODO -------------------------------------- REMOVE THIS!
         Grid::from_vec(v, bounds, LOCAL_SIZE)
 
     }

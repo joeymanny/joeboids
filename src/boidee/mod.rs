@@ -13,7 +13,6 @@ pub struct Boidee {
     pub speed: f32,
     pub randscope: usize,
     pub rand: f32,
-    pub chosen: bool
 }
 impl std::fmt::Display for Boidee {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -36,7 +35,6 @@ impl Boidee {
             speed: RAND_BOID_SPEED - ((r.gen::<f32>() - 0.5) * (RAND_BOID_SPEED_VARIATION * 2.0)),
             randscope: 0,
             rand: 0.0,
-            chosen: false
         }
     }
     pub fn new() -> Boidee {
@@ -46,7 +44,6 @@ impl Boidee {
             speed: 2.0,
             randscope: 0,
             rand: 0.0,
-            chosen: false,
         }
     }
     pub fn step(
@@ -54,10 +51,7 @@ impl Boidee {
         flock: &Grid,
         bounds: &(usize, usize),
         flock_scare: Option<f32>
-    ) -> 
-        (
-            Boidee
-            ,Option<Vec<Boidee>>)
+    ) -> Boidee
         {
         let mut new_dir = self.dir;
         let mut move_by = Vector2::new(0.0, 0.0);
@@ -66,12 +60,9 @@ impl Boidee {
         let mut local_dir = self.dir;
         let mut too_close_p = Vector2::new(0.0, 0.0);
         let mut too_close_n = 0;
-        let mut amogus: Option<Vec<Boidee>> = None;
         let neighbors = flock.get_cell_neighbors(&self);
         let mut used_speed = self.speed;
-        if self.chosen{
-            amogus = Some(Vec::new());
-        }
+
         for fren in neighbors {
             if fren != *self {
                 let dist = (fren.pos - self.pos).abs();
@@ -85,9 +76,6 @@ impl Boidee {
                     local_dir =  ((fren.dir - local_dir) / 2.0) + local_dir;
                     local_avg = local_avg + fren.pos;
                     local_num += 1;
-                    if self.chosen {
-                        amogus.as_mut().unwrap().push(fren);
-                    }
                 }
             }
         }
@@ -139,15 +127,12 @@ impl Boidee {
         if new_dir < 0.0 {
             new_dir = new_dir + (2.0 * PI) ;
         }
-        (
-            Boidee {
+        Boidee {
             pos: move_by,
             dir: new_dir,
             speed: self.speed,
             randscope: new_randscope,
             rand: new_rand,
-            chosen: self.chosen
         }
-        , amogus)
     }
 }

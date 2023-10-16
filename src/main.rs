@@ -39,6 +39,7 @@ pub fn main() {
  
     let window = video_subsystem.window("boids", 1500, 800)
         .position_centered()
+        .resizable()
         .build()
         .unwrap();
  
@@ -51,7 +52,7 @@ pub fn main() {
     canvas.present();
     let bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
-    flock_master.init_boidee_random(1000);
+    flock_master.init_boidee_random(8000);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
 
