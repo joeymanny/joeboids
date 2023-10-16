@@ -95,7 +95,7 @@ impl Grid{
 
         rtrn
     }
-    pub fn random(num: u32, bounds: (usize, usize)) -> Grid{
+    pub fn random(num: usize, bounds: (usize, usize)) -> Grid{
         let mut v:Vec<Boidee> = vec![];
         for _ in 0..(num
         ){

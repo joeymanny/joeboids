@@ -36,7 +36,7 @@ impl Boid {
             cpus: num_cpus::get()
         }
     }
-    pub fn init_boidee_random(&mut self, num: u32) {
+    pub fn init_boidee_random(&mut self, num: usize) {
         let rand = Grid::random(num, self.bounds);
         self.b0 = rand.clone();
         self.b1 = rand;

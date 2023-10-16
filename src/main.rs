@@ -1,5 +1,6 @@
 extern crate sdl2; 
 
+use clap::Parser;
 // use std::thread::sleep;
 use joeboid::boid::Boid;
 use joeboid::BoidCanvas;
@@ -10,7 +11,20 @@ use sdl2::keyboard::Keycode;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::ops::{Deref, DerefMut};
+#[derive(Parser)]
+#[clap(author="Joseph Peterson", version, about="Joe's crummy boid project")]
+struct Arguments{
+    #[clap(short='n', long="num", default_value_t=200)]
+    /// Number of bird-like-objects to conjure
+    num: usize,
+    #[clap(long="width", default_value_t=600)]
+    /// Window width
+    width: u32,
+    #[clap(long="height", default_value_t=400)]
+    /// Window width
+    height: u32,
 
+}
 struct Wrapper(Canvas<Window>);
 
 //NOTE: idea: have the title bar update with some info. use set_title() on the window
@@ -34,10 +48,11 @@ impl DerefMut for Wrapper{
     }
 }
 pub fn main() {
+    let config = Arguments::parse();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
  
-    let window = video_subsystem.window("boids", 1500, 800)
+    let window = video_subsystem.window("boids", config.width, config.height)
         .position_centered()
         .resizable()
         .build()
@@ -52,7 +67,7 @@ pub fn main() {
     canvas.present();
     let bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
-    flock_master.init_boidee_random(8000);
+    flock_master.init_boidee_random(config.num);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
 
