@@ -130,10 +130,10 @@ impl Boid {
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            println!("entire step_draw function was early by {:?}", v); // !!!
-        }else{
+            // println!("entire step_draw function was early by {:?}", v); // !!!
+        }/*else{
             println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS)); // !!!
-        }
+        }*/
         // println!("delta-time was {:?}", self.dt.elapsed()); // !!!
         
     }
