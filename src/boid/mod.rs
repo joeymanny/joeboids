@@ -3,6 +3,7 @@ pub const SIZE_FACTOR: f32 = 8.0;
 use crate::boidee::Boidee;
 use crate::grid::Grid;
 use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
+use std::slice::Chunks;
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
 use std::f32::consts::PI;
@@ -12,7 +13,8 @@ pub struct Boid{
     b1: Grid,
     switch: bool,
     dt: Instant,
-    flock_scare: Option<f32>
+    flock_scare: Option<f32>,
+    cpus: usize
 }
 impl Boid {
     // fn update_grid(&mut self) -> Self{
@@ -31,7 +33,8 @@ impl Boid {
             // true = b1
             switch: false,
             dt: Instant::now(),
-            flock_scare: None
+            flock_scare: None,
+            cpus: num_cpus::get()
         }
     }
     pub fn init_boidee_random(&mut self, num: u32) {
@@ -66,10 +69,14 @@ impl Boid {
         }
         // update grid from buffer
         // update all boids
+        // empty buffer
         let mut buffer: Vec<Boidee> = vec![];
-        let step_timer = Instant::now(); // !!!
+        // flattened iterator over boidees
+        // let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
         for current in c.cells.iter().flatten().flatten() {
+            // do this
             let (new_boid, what_chosen_sees) = current.step(c, &self.bounds, self.flock_scare);
+            // in multithread we return the value to push to the buffer instead of directly pushing it
             buffer.push(new_boid);
             if let Some(v) = what_chosen_sees {
                 for b in v{
@@ -77,12 +84,10 @@ impl Boid {
                 }
             }
         }
-        // println!("steping boids took {:?}", step_timer.elapsed()); // !!!
         *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
         // the buffers have been updated
         self.dt = Instant::now();
         self.switch = !self.switch;
-        let draw_timer = Instant::now();
         for new_boid in c.cells.iter().flatten().flatten() {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();
@@ -110,7 +115,6 @@ impl Boid {
                 )
                 .unwrap();
         }
-        // println!("drawing boids took {:?}", draw_timer.elapsed());// !!!
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
