@@ -49,7 +49,7 @@ impl Boidee {
     pub fn step(
         &self,
         flock: &Grid,
-        bounds: &(usize, usize),
+        bounds: (usize, usize),
         flock_scare: Option<f32>
     ) -> Boidee
         {

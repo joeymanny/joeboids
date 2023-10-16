@@ -3,7 +3,6 @@ pub const SIZE_FACTOR: f32 = 8.0;
 use crate::boidee::Boidee;
 use crate::grid::Grid;
 use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
-use std::slice::Chunks;
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
 use std::f32::consts::PI;
@@ -66,23 +65,19 @@ impl Boid {
             b = &mut self.b1;
             c = &self.b0;
         }
-        // update grid from buffer
-        // update all boids
         // empty buffer
         let mut buffer: Vec<Boidee> = vec![];
-        // flattened iterator over boidees
-        // let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
+        // flattened Vec over boidees
         let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
-        std::thread::scope(|scope: &std::thread::Scope<'_, '_>|{
-            let thread_bounds = self.bounds.clone();
-            let thread_flock_scare = self.flock_scare.clone();
+        std::thread::scope(|scope|{
+            let thread_bounds = self.bounds;
+            let thread_flock_scare = self.flock_scare;
             let mut handles = vec![];
-            let f = (flattened_refs.len() as f32 / num_cpus::get() as f32).ceil() as usize;
-            for task in flattened_refs.chunks(f){
+            for task in flattened_refs.chunks((flattened_refs.len() as f32 / self.cpus as f32).ceil() as usize){
                 handles.push(scope.spawn(move ||{
                     let mut ret = vec![];
                     for boidee in task{
-                        ret.push(boidee.step(c, &thread_bounds, thread_flock_scare));
+                        ret.push(boidee.step(c, thread_bounds, thread_flock_scare));
                     }
                     ret
                 }));
