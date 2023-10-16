@@ -32,7 +32,7 @@ impl Boid {
             // false = b0,
             // true = b1
             switch: false,
-            dt: Instant::now(),
+            //dt: Instant::now(),
             flock_scare: None,
             cpus: num_cpus::get()
         }
@@ -74,9 +74,10 @@ impl Boid {
         // flattened iterator over boidees
         // let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
         for current in c.cells.iter().flatten().flatten() {
-            // do this
-            let (new_boid, what_chosen_sees) = current.step(c, &self.bounds, self.flock_scare);
-            // in multithread we return the value to push to the buffer instead of directly pushing it
+            let (
+                new_boid
+                , what_chosen_sees)
+                = current.step(c, &self.bounds, self.flock_scare);
             buffer.push(new_boid);
             if let Some(v) = what_chosen_sees {
                 for b in v{
@@ -86,8 +87,9 @@ impl Boid {
         }
         *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
         // the buffers have been updated
-        self.dt = Instant::now();
+        //self.dt = Instant::now();
         self.switch = !self.switch;
+        //let draw_timer = Instant::now();
         for new_boid in c.cells.iter().flatten().flatten() {
             let h_sin = new_boid.dir.sin();
             let h_cos = new_boid.dir.cos();

@@ -54,7 +54,11 @@ impl Boidee {
         flock: &Grid,
         bounds: &(usize, usize),
         flock_scare: Option<f32>
-    ) -> (Boidee, Option<Vec<Boidee>>) {
+    ) -> 
+        (
+            Boidee
+            ,Option<Vec<Boidee>>)
+        {
         let mut new_dir = self.dir;
         let mut move_by = Vector2::new(0.0, 0.0);
         let mut local_avg = Vector2::new(0.0, 0.0);
@@ -135,13 +139,15 @@ impl Boidee {
         if new_dir < 0.0 {
             new_dir = new_dir + (2.0 * PI) ;
         }
-        (Boidee {
+        (
+            Boidee {
             pos: move_by,
             dir: new_dir,
             speed: self.speed,
             randscope: new_randscope,
             rand: new_rand,
             chosen: self.chosen
-        }, amogus)
+        }
+        , amogus)
     }
 }
