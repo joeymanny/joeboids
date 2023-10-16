@@ -12,7 +12,6 @@ pub struct Boid{
     b0: Grid,
     b1: Grid,
     switch: bool,
-    dt: Instant,
     flock_scare: Option<f32>,
     cpus: usize
 }
