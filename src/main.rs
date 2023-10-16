@@ -17,10 +17,10 @@ struct Arguments{
     #[clap(short='n', long="num", default_value_t=200)]
     /// Number of bird-like-objects to conjure
     num: usize,
-    #[clap(long="width", default_value_t=600)]
+    #[clap(long="width", default_value_t=800)]
     /// Window width
     width: u32,
-    #[clap(long="height", default_value_t=400)]
+    #[clap(long="height", default_value_t=600)]
     /// Window width
     height: u32,
 
@@ -54,7 +54,6 @@ pub fn main() {
  
     let window = video_subsystem.window("boids", config.width, config.height)
         .position_centered()
-        .resizable()
         .build()
         .unwrap();
  
