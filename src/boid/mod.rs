@@ -96,28 +96,22 @@ impl Boid {
         self.switch = !self.switch;
         //let draw_timer = Instant::now();
         for new_boid in c.cells.iter().flatten().flatten() {
-            let h_sin = new_boid.dir.sin();
-            let h_cos = new_boid.dir.cos();
+
             canvas
                 .draw_triangle(
-                    // tip: (sin * fac) + world
                     (
-                        ((new_boid.dir.cos() * SIZE_FACTOR) + new_boid.pos.x) as i32,
-                        ((new_boid.dir.sin() * SIZE_FACTOR) + new_boid.pos.y) as i32,
+                        ((new_boid.velocity.x * SIZE_FACTOR) + new_boid.pos.x) as i32,
+                        ((new_boid.velocity.y * SIZE_FACTOR) + new_boid.pos.y) as i32,
                     ),
                     // bottom left: (sin+90 * fac) + world
                     (
-                        (((new_boid.dir + PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
-                            + new_boid.pos.x) as i32,
-                        (((new_boid.dir + PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
-                            + new_boid.pos.y) as i32,
+                        ((-new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.pos.x) as i32,
+                        ((new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.pos.y) as i32,
                     ),
                     // bottom right: (sin-90 * fac) + world
                     (
-                        (((new_boid.dir - PI / 2.0).cos() * SIZE_FACTOR * 0.5 - h_cos)
-                            + new_boid.pos.x) as i32,
-                        (((new_boid.dir - PI / 2.0).sin() * SIZE_FACTOR * 0.5 - h_sin)
-                            + new_boid.pos.y) as i32,
+                        ((new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.pos.x) as i32,
+                        ((-new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.pos.y) as i32,
                     ),
                 )
                 .unwrap();
