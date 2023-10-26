@@ -77,7 +77,7 @@ impl Boid {
                 handles.push(scope.spawn(move ||{
                     let mut ret = vec![];
                     for boidee in task{
-                        ret.push(boidee.step(c, thread_bounds, thread_flock_scare));
+                        ret.push(boidee.step(c.get_cell_neighbors(&boidee), thread_bounds, thread_flock_scare));
                     }
                     ret
                 }));
@@ -100,18 +100,18 @@ impl Boid {
             canvas
                 .draw_triangle(
                     (
-                        ((new_boid.velocity.x * SIZE_FACTOR) + new_boid.pos.x) as i32,
-                        ((new_boid.velocity.y * SIZE_FACTOR) + new_boid.pos.y) as i32,
+                        ((new_boid.velocity.x * SIZE_FACTOR) + new_boid.position.x) as i32,
+                        ((new_boid.velocity.y * SIZE_FACTOR) + new_boid.position.y) as i32,
                     ),
                     // bottom left: (sin+90 * fac) + world
                     (
-                        ((-new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.pos.x) as i32,
-                        ((new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.pos.y) as i32,
+                        ((-new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.position.x) as i32,
+                        ((new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.position.y) as i32,
                     ),
                     // bottom right: (sin-90 * fac) + world
                     (
-                        ((new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.pos.x) as i32,
-                        ((-new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.pos.y) as i32,
+                        ((new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.position.x) as i32,
+                        ((-new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.position.y) as i32,
                     ),
                 )
                 .unwrap();
