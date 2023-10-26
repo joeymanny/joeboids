@@ -28,8 +28,8 @@ impl Grid{
         // fill them with data
         // this will panic is max is too small, so make sure max isn't too small
         for boidee in data{
-            let adj_x = (boidee.pos.x / fac).floor() as usize;
-            let adj_y = (boidee.pos.y / fac).floor() as usize;
+            let adj_x = (boidee.position.x / fac).floor() as usize;
+            let adj_y = (boidee.position.y / fac).floor() as usize;
             buf[adj_x][adj_y].push(boidee);
         }
         Self { max, cells: buf, fac }
@@ -39,8 +39,8 @@ impl Grid{
         // we can assume this because these (should be) both coordinated by Boid
         // just don't mess up Boid and it'll be fine
         let mut rtrn: Vec<Boidee> = vec![];
-        let x_adj: usize = (sub.pos.x / self.fac as f32).floor() as usize;
-        let y_adj: usize = (sub.pos.y / self.fac as f32).floor() as usize;
+        let x_adj: usize = (sub.position.x / self.fac as f32).floor() as usize;
+        let y_adj: usize = (sub.position.y / self.fac as f32).floor() as usize;
         let sub_cell = self.cells[x_adj][y_adj].clone();
         let x_0 = x_adj <= 1;
         let y_0 = y_adj <= 1;
