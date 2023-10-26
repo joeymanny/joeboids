@@ -8,7 +8,7 @@ use std::f32::consts::PI;
 use crate::grid::Grid;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Boidee {
-    pub pos: Vector2,
+    pub position: Vector2,
     pub velocity: Vector2,
 
     chosen: bool
@@ -18,7 +18,7 @@ impl std::fmt::Display for Boidee {
         write!(
             f,
             "pos: ({},{}), velocity: ({},{})",
-            self.pos.x, self.pos.y, self.velocity.x, self.velocity.y
+            self.position.x, self.position.y, self.velocity.x, self.velocity.y
         )
     }
 }
@@ -27,7 +27,7 @@ impl Boidee {
         let mut r = rand::thread_rng();
         let dir = (r.gen::<f32>() * 2.0 * PI).sin_cos();
         Boidee {
-            pos: Vector2::new(
+            position: Vector2::new(
                 r.gen::<f32>() * bounds.0 as f32,
                 r.gen::<f32>() * bounds.1 as f32,
             ),
@@ -37,18 +37,20 @@ impl Boidee {
     }
     pub fn new() -> Boidee {
         Boidee {
-            pos: Vector2::new(0.0, 0.0),
+            position: Vector2::new(0.0, 0.0),
             velocity: Vector2::new(1.0, 0.0),
             chosen: false
         }
     }
     pub fn step(
         &self,
-        flock: &Grid,
+        nearby_boids: Vec<Boidee>,
         bounds: (usize, usize),
         flock_scare: Option<f32>
     ) -> Boidee
     {
-        self.clone()
+        // we're gonna return a modified version of ourself
+        
+        // TODO
     }
 }
