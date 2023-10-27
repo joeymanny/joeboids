@@ -1,5 +1,7 @@
 const PROTECTED_RANGE: f32 = 4.0;
 const AVOID_FACTOR: f32 = 1.0;
+const MAX_SPEED: f32 = 8.0;
+const MIN_SPEED:f32 = 3.0;
 use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -64,6 +66,24 @@ impl Boidee {
         if new_boid.position.y < 0.0{
             new_boid.position.y += bounds.1 as f32;
         }
+        // Once the velocity has been updated, compute the boid speed
+        // speed = sqrt(boid.vx*boid.vx + boid.vy*boid.vy)
+        // If speed>maxspeed:
+        // boid.vx = (boid.vx/speed)*maxspeed
+        // boid.vy = (boid.vy/speed)*minspeed
+        // If speed<minspeed:
+        // boid.vx = (boid.vx/speed)*minspeed
+        // boid.vy = (boid.vy/speed)*minspeed
+        let speed = new_boid.velocity.abs();
+        if speed > MAX_SPEED{
+            new_boid.velocity = new_boid.velocity / speed;
+            new_boid.velocity = new_boid.velocity * MAX_SPEED;
+        }
+        if speed < MIN_SPEED{
+            new_boid.velocity = new_boid.velocity / speed;
+            new_boid.velocity = new_boid.velocity * MIN_SPEED;
+        }
+
         new_boid
         // TODO
     }
