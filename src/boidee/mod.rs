@@ -83,7 +83,6 @@ impl Boidee {
             new_boid.velocity = new_boid.velocity / speed;
             new_boid.velocity = new_boid.velocity * MIN_SPEED;
         }
-
         new_boid
         // TODO
     }
