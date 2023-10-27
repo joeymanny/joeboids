@@ -1,7 +1,9 @@
-use super::*;
-
+use std::f32::consts::PI;
+#[allow(unused)]
 const PI_OVER_180: f32 = PI/180.0;
- 
+use std::ops::*;
+use std::fmt::Display;
+use std::cmp::Ordering;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Angle (pub f32);
 impl Angle {
@@ -23,6 +25,7 @@ impl Angle {
     
     }
 }
+#[allow(unused)]
 pub fn rad<T: Into<f32>>(n: T) -> f32{
     n.into() * PI_OVER_180
 }
@@ -84,7 +87,7 @@ impl Deref for Angle{
     }
 }
 impl Display for Angle {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f,
         "{}",
         self.0

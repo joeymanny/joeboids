@@ -1,11 +1,8 @@
-const RAND_BOID_SPEED: f32 = 4.0;
-const RAND_BOID_SPEED_VARIATION: f32 = 0.5;
+const PROTECTED_RANGE: f32 = 4.0;
+const AVOID_FACTOR: f32 = 1.0;
 use crate::vector2::Vector2;
-use crate::angle::Angle;
-use crate::{MAX_RAND_SCOPE, TOO_CLOSE, LOCAL_SIZE};
 use rand::prelude::*;
 use std::f32::consts::PI;
-use crate::grid::Grid;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Boidee {
     pub position: Vector2,
@@ -49,8 +46,25 @@ impl Boidee {
         flock_scare: Option<f32>
     ) -> Boidee
     {
-        // we're gonna return a modified version of ourself
-        
+        let mut new_boid = self.clone();
+        let mut close: Vector2 = Vector2{x: 0.0, y: 0.0};
+    // we're gonna return a modified version of ourself
+        for near in nearby_boids{
+            // if it's within 'sight'
+            if (near.position - self.position).abs() < PROTECTED_RANGE {
+                close += self.position - near.position;
+            }
+        }
+        new_boid.velocity += close * AVOID_FACTOR;
+        new_boid.position += new_boid.velocity;
+        new_boid.position = Vector2{x:new_boid.position.x % bounds.0 as f32, y:new_boid.position.y % bounds.1 as f32};
+        if new_boid.position.x < 0.0{
+            new_boid.position.x += bounds.0 as f32;
+        }
+        if new_boid.position.y < 0.0{
+            new_boid.position.y += bounds.1 as f32;
+        }
+        new_boid
         // TODO
     }
 }

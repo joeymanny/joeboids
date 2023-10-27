@@ -3,7 +3,7 @@ use crate::boidee::Boidee;
 #[derive(Clone, Debug)]
 pub struct Grid{
     max: (usize, usize),
-    pub cells: Vec<Vec<Vec<Boidee>>>,
+    cells: Vec<Vec<Vec<Boidee>>>,
     fac: f32,
 }
 impl Grid{
@@ -28,9 +28,9 @@ impl Grid{
         // fill them with data
         // this will panic is max is too small, so make sure max isn't too small
         for boidee in data{
-            let adj_x = (boidee.position.x / fac).floor() as usize;
-            let adj_y = (boidee.position.y / fac).floor() as usize;
-            buf[adj_x][adj_y].push(boidee);
+            let index_x = (boidee.position.x / fac).floor() as usize;
+            let index_y = (boidee.position.y / fac).floor() as usize;
+            buf[index_x][index_y].push(boidee);
         }
         Self { max, cells: buf, fac }
     }
@@ -39,13 +39,13 @@ impl Grid{
         // we can assume this because these (should be) both coordinated by Boid
         // just don't mess up Boid and it'll be fine
         let mut rtrn: Vec<Boidee> = vec![];
-        let x_adj: usize = (sub.position.x / self.fac as f32).floor() as usize;
-        let y_adj: usize = (sub.position.y / self.fac as f32).floor() as usize;
-        let sub_cell = self.cells[x_adj][y_adj].clone();
-        let x_0 = x_adj <= 1;
-        let y_0 = y_adj <= 1;
-        let y_max = y_adj >= ((self.max.1) as f32 / self.fac).floor() as usize;
-        let x_max = x_adj >= ((self.max.0) as f32 / self.fac).floor() as usize;
+        let index_x: usize = (sub.position.x / self.fac).floor() as usize;
+        let index_y: usize = (sub.position.y / self.fac).floor() as usize;
+        let sub_cell = self.cells[index_x][index_y].clone();
+        let x_0 = index_x <= 1;
+        let y_0 = index_y <= 1;
+        let y_max = index_y >= ((self.max.1) as f32 / self.fac).floor() as usize;
+        let x_max = index_x >= ((self.max.0) as f32 / self.fac).floor() as usize;
         
         //left
             //upper left
@@ -57,37 +57,37 @@ impl Grid{
         //down
         if !x_0{
             // left
-            rtrn.append(&mut self.cells[x_adj - 1][y_adj].clone());
+            rtrn.append(&mut self.cells[index_x - 1][index_y].clone());
             if !y_0{
                 //upper left
-                rtrn.append(&mut self.cells[x_adj - 1][y_adj - 1].clone());
+                rtrn.append(&mut self.cells[index_x - 1][index_y - 1].clone());
             }
             if !y_max{
                 // lower left
-                rtrn.append(&mut self.cells[x_adj - 1][y_adj + 1].clone());
+                rtrn.append(&mut self.cells[index_x - 1][index_y + 1].clone());
             }
         }else{
             // rtrn.append(&mut self.cells[self.cells.len() - 1][y_adj].clone());
         }
         if !x_max{
             //right
-            rtrn.append(&mut self.cells[x_adj + 1][y_adj].clone());
+            rtrn.append(&mut self.cells[index_x + 1][index_y].clone());
             if !y_0{
                 // upper right
-                rtrn.append(&mut self.cells[x_adj + 1][y_adj - 1].clone());
+                rtrn.append(&mut self.cells[index_x + 1][index_y - 1].clone());
             }
             if !y_max{
                 // lower right
-                rtrn.append(&mut self.cells[x_adj + 1][y_adj + 1].clone());
+                rtrn.append(&mut self.cells[index_x + 1][index_y + 1].clone());
             }
         }
         if !y_max{
             // down
-            rtrn.append(&mut self.cells[x_adj][y_adj + 1].clone());
+            rtrn.append(&mut self.cells[index_x][index_y + 1].clone());
         }
         if !y_0{
             // up
-            rtrn.append(&mut self.cells[x_adj][y_adj - 1].clone());
+            rtrn.append(&mut self.cells[index_x][index_y - 1].clone());
         }
         // we also need our own cell of course
         rtrn.append(&mut sub_cell.clone());
@@ -122,5 +122,8 @@ impl Grid{
             x_array.push(y_array);
         }
         x_array
+    }
+    pub fn iterate_flattened(&self) -> impl Iterator<Item = &Boidee>{
+        self.cells.iter().flatten().flatten()
     }
 }

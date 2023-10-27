@@ -16,7 +16,7 @@ impl Vector2 {
     pub fn abs(self) -> f32 {
         (self.x.powi(2) + self.y.powi(2)).sqrt()
     }
-     fn normalized(self) -> Self {
+    pub fn normalized(self) -> Self {
         let fac = 1.0 / self.abs();
         Vector2 {
             x: self.x * fac,
@@ -73,5 +73,13 @@ impl Add<f32> for Vector2{
 impl std::fmt::Display for Vector2 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
+    }
+}
+impl std::ops::AddAssign for Vector2 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        };
     }
 }

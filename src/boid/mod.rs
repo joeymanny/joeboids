@@ -5,7 +5,6 @@ use crate::grid::Grid;
 use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
-use std::f32::consts::PI;
 pub struct Boid{
     bounds: (usize, usize),
     b0: Grid,
@@ -68,7 +67,7 @@ impl Boid {
         // empty buffer
         let mut buffer: Vec<Boidee> = vec![];
         // flattened Vec over boidees
-        let flattened_refs: Vec<&Boidee> = c.cells.iter().flatten().flatten().collect();
+        let flattened_refs: Vec<&Boidee> = c.iterate_flattened().collect();
         std::thread::scope(|scope|{
             let thread_bounds = self.bounds;
             let thread_flock_scare = self.flock_scare;
@@ -95,23 +94,26 @@ impl Boid {
         //self.dt = Instant::now();
         self.switch = !self.switch;
         //let draw_timer = Instant::now();
-        for new_boid in c.cells.iter().flatten().flatten() {
-
+        for new_boid in c.iterate_flattened() {
+                            // TODO
+                            // this was done real quick and needs to be fixed 
+            let mut temp_boid = new_boid.clone();
+            temp_boid.velocity = new_boid.velocity.normalized();
             canvas
                 .draw_triangle(
                     (
-                        ((new_boid.velocity.x * SIZE_FACTOR) + new_boid.position.x) as i32,
-                        ((new_boid.velocity.y * SIZE_FACTOR) + new_boid.position.y) as i32,
+                        ((temp_boid.velocity.x * SIZE_FACTOR) + temp_boid.position.x) as i32,
+                        ((temp_boid.velocity.y * SIZE_FACTOR) + temp_boid.position.y) as i32,
                     ),
                     // bottom left: (sin+90 * fac) + world
                     (
-                        ((-new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.position.x) as i32,
-                        ((new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.position.y) as i32,
+                        ((-temp_boid.velocity.y * SIZE_FACTOR) / 2.0 + temp_boid.position.x) as i32,
+                        ((temp_boid.velocity.x * SIZE_FACTOR) / 2.0 + temp_boid.position.y) as i32,
                     ),
                     // bottom right: (sin-90 * fac) + world
                     (
-                        ((new_boid.velocity.y * SIZE_FACTOR) / 2.0 + new_boid.position.x) as i32,
-                        ((-new_boid.velocity.x * SIZE_FACTOR) / 2.0 + new_boid.position.y) as i32,
+                        ((temp_boid.velocity.y * SIZE_FACTOR) / 2.0 + temp_boid.position.x) as i32,
+                        ((-temp_boid.velocity.x * SIZE_FACTOR) / 2.0 + temp_boid.position.y) as i32,
                     ),
                 )
                 .unwrap();
