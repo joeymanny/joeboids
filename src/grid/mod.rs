@@ -2,16 +2,21 @@ use crate::LOCAL_SIZE;
 use crate::boidee::Boidee;
 #[derive(Clone, Debug)]
 pub struct Grid{
-    max: (usize, usize),
+    max: (f32, f32),
+    min: (f32, f32),
     cells: Vec<Vec<Vec<Boidee>>>,
     fac: f32,
 }
 impl Grid{
-    pub fn new(max: (usize,usize), fac: f32) -> Grid{
-        let cells: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec(max, fac);
-        Self { max, cells, fac }
+    pub fn new(max: (f32,f32), min: (f32, f32), fac: f32) -> Grid{
+        // size of vector is max - min, rounded up
+        // eg. min:(-11.3, -15.0) max: (110.3, 403.5) will make a grid of (122, 419)
+        // this means there will always be a boid in cell [0][0]
+        // it also getting something out of the grid involves subtracting min from it
+        let cells: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec(((max.0 - min.0).ceil() as usize, (max.1 - min.1).ceil() as usize), fac);
+        Self { max, min, cells, fac }
     }
-    pub fn from_vec(data: Vec<Boidee>, max: (usize, usize), fac: f32) -> Grid{ // DONE!
+    pub fn from_vec(data: Vec<Boidee>, max: (f32, f32), min: (f32, f32), fac: f32) -> Grid{
         // make an array of cells of the right size
         // populate the Vec's of the cells with references to the data
         // profit
@@ -24,20 +29,23 @@ impl Grid{
         //      4: 0|1|2|3|4
 
         // empty 3D array (3rd dimension for Boidees)
-        let mut buf: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec((max.0, max.1), fac);
+        // same as in new(): maximum size for the boids given
+        let mut buf: Vec<Vec<Vec<Boidee>>> = Grid::init_grid_vec(((max.0 - min.0).ceil() as usize, (max.1 - min.1).ceil() as usize), fac);
+
+        // the buffer has positive indexes, but the boids may have nagative postitions
+
         // fill them with data
         // this will panic is max is too small, so make sure max isn't too small
+        let fac = 1.0 / fac; // dividing is slow
         for boidee in data{
-            let index_x = (boidee.position.x / fac).floor() as usize;
-            let index_y = (boidee.position.y / fac).floor() as usize;
+            let index_x = (boidee.position.x * fac).floor() as usize;
+            let index_y = (boidee.position.y * fac).floor() as usize;
             buf[index_x][index_y].push(boidee);
         }
-        Self { max, cells: buf, fac }
+        Self { max, min, cells: buf, fac }
     }
     pub fn get_cell_neighbors(&self, sub: &Boidee) -> Vec<Boidee>{
-        // we are assuming that all Boidees have positions within the max
-        // we can assume this because these (should be) both coordinated by Boid
-        // just don't mess up Boid and it'll be fine
+        // 
         let mut rtrn: Vec<Boidee> = vec![];
         let index_x: usize = (sub.position.x / self.fac).floor() as usize;
         let index_y: usize = (sub.position.y / self.fac).floor() as usize;
