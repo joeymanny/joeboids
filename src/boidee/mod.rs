@@ -71,7 +71,7 @@ impl Boidee {
         // rule 1 - seperation
         new_boid.velocity += close * AVOID_FACTOR;
 
-        if num_neighbors > 0 { // rules 2 and 3 divide by num_neighbors
+        if num_neighbors > 0 { // rules 2 and 3 divide by num_neighbors - it can't be zero
 
             // rule 2 - alignment
             velocity_avg = velocity_avg / num_neighbors as f32;
@@ -83,6 +83,7 @@ impl Boidee {
         }
         // temporary rule: try to get to the center
         new_boid.velocity += (Vector2{x: bounds.0 as f32 / 2.0, y: bounds.1 as f32 / 2.0} - new_boid.position) * 0.0005;
+
         // step forward
         new_boid.position += new_boid.velocity;
 
