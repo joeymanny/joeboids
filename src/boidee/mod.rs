@@ -1,10 +1,10 @@
 const PROTECTED_RANGE: f32 = 10.0;
-const VISUAL_RANGE: f32 = 40.0;
+const VISUAL_RANGE: f32 = 20.0;
 const AVOID_FACTOR: f32 = 0.05;
 const MATCHING_FACTOR: f32 = 0.05;
 const CENTERING_FORCE: f32 = 0.0005;
 const MAX_SPEED: f32 = 8.0;
-const MIN_SPEED:f32 = 3.0;
+const MIN_SPEED:f32 = 2.0;
 use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -68,16 +68,16 @@ impl Boidee {
                 }
             }
         }
-        // rule 1
+        // rule 1 - seperation
         new_boid.velocity += close * AVOID_FACTOR;
 
         if num_neighbors > 0 { // rules 2 and 3 divide by num_neighbors
 
-            // rule 2
+            // rule 2 - alignment
             velocity_avg = velocity_avg / num_neighbors as f32;
             new_boid.velocity += (velocity_avg - new_boid.velocity) * MATCHING_FACTOR;
 
-            // rule 3
+            // rule 3 - cohesion
             position_avg = position_avg / num_neighbors as f32;
             new_boid.velocity += (position_avg - new_boid.position) * CENTERING_FORCE;
         }
