@@ -3,12 +3,12 @@ const VISUAL_RANGE: f32 = 40.0;
 const AVOID_FACTOR: f32 = 0.05;
 const MATCHING_FACTOR: f32 = 0.05;
 const CENTERING_FORCE: f32 = 0.0005;
-const MAX_SPEED: f32 = 8.0;
+const MAX_SPEED: f32 = 7.0;
 const MIN_SPEED:f32 = 2.0;
 const TARGET_FORCE: f32 = 0.001;
 const TARGETING_DISTANCE: f32 = 300.0;
-const EDGE_AVOIDANCE_FORCE: f32 = 0.05;
-const BORDER_SIZE_FACTOR: f32 = 8.0; // boids will avoid the edge when one tenth of the whole screen from the edge
+const EDGE_AVOIDANCE_FORCE: f32 = 0.07;
+const EDGE_AVOIDANCE_MARGIN: f32 = 6.0; // boids will avoid the edge when one tenth of the whole screen from the edge
 use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -109,8 +109,8 @@ impl Boidee {
             new_boid.velocity += (config.0 - new_boid.position) * TARGET_FORCE * target_type;
         }
         }
-        let x_border = (max.0 - min.0) / BORDER_SIZE_FACTOR;
-        let y_border = (max.1 - min.1) / BORDER_SIZE_FACTOR;
+        let x_border = (max.0 - min.0) / EDGE_AVOIDANCE_MARGIN;
+        let y_border = (max.1 - min.1) / EDGE_AVOIDANCE_MARGIN;
         if new_boid.position.x > max.0 - x_border{
             new_boid.velocity += Vector2::left() * EDGE_AVOIDANCE_FORCE;
         }
