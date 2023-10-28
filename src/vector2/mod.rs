@@ -23,6 +23,9 @@ impl Vector2 {
             y: self.y * fac,
         }
     }
+    pub fn zero() -> Vector2{
+        Vector2 { x: 0.0, y: 0.0 }
+    }
 }
 
 impl Div<f32> for Vector2 {
