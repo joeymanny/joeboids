@@ -1,6 +1,5 @@
 use crate::LOCAL_SIZE;
 use crate::boidee::Boidee;
-use crate::vector2::Vector2;
 #[derive(Clone, Debug)]
 pub struct Grid{
     max: (f32, f32),
@@ -127,7 +126,7 @@ impl Grid{
         Grid::from_vec(v, LOCAL_SIZE)
 
     }
-    pub fn init_num(num: u32, min: (f32, f32), max: (f32, f32)) -> Grid{
+    pub fn init_num(num: u32) -> Grid{
         let mut v:Vec<Boidee> = vec![];
         for _ in 0..num{
             v.push(Boidee::new());
@@ -163,6 +162,8 @@ fn is_init_grid_vec_correct_size(){
 
 #[test]
 fn is_init_grid_vec_working_with_positions(){
+    use crate::vector2::Vector2;
+
     let data = vec![
         Boidee{position: Vector2{x: 16.0, y: 9.0}, .. Boidee::new()},
         Boidee{position: Vector2{x: -16.0, y: -9.0}, .. Boidee::new()},

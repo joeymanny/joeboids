@@ -37,6 +37,7 @@ impl Boidee {
             chosen: false
         }
     }
+    #[allow(unused)]
     pub fn new() -> Boidee {
         Boidee {
             position: Vector2::new(0.0, 0.0),

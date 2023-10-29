@@ -42,7 +42,7 @@ impl Boid {
 
     }
     pub fn init_boidee(&mut self, num: u32) {
-        let new = Grid::init_num(num, self.bounds.0, self.bounds.1);
+        let new = Grid::init_num(num);
         self.b0 = new.clone();
         self.b1 = new;
         // make sure we start knowing buffer 0 has the data
