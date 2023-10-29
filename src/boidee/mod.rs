@@ -101,7 +101,7 @@ impl Boidee {
             let target_type = if let TargetType::Avoid = config.1{
                 let distance = (config.0 - self.position).abs();
                 if distance < TARGET_AVOID_DISTANCE{
-                    1.0 / distance * -300.0
+                    1.0 / distance * -TARGET_AVOID_DISTANCE
                 } else {1.0}
             }else{
                 1.0
