@@ -12,8 +12,6 @@ use std::f32::consts::PI;
 pub struct Boidee {
     pub position: Vector2,
     pub velocity: Vector2,
-
-    pub chosen: bool
 }
 impl std::fmt::Display for Boidee {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,7 +32,6 @@ impl Boidee {
                 (r.gen::<f32>() * max.1 - min.1 as f32) + min.0,
             ),
             velocity: Vector2::new(dir.0, dir.1),
-            chosen: false
         }
     }
     #[allow(unused)]
@@ -42,7 +39,6 @@ impl Boidee {
         Boidee {
             position: Vector2::new(0.0, 0.0),
             velocity: Vector2::new(1.0, 0.0),
-            chosen: false
         }
     }
     pub fn step(
