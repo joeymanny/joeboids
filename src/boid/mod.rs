@@ -2,9 +2,12 @@ pub const SIZE_FACTOR: f32 = 8.0;
 
 use crate::boidee::Boidee;
 use crate::grid::Grid;
+use crate::vector2::Vector2;
 use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
+pub use crate::boidee::TargetType;
+
 pub struct Boid{
     bounds: ((f32, f32), (f32, f32)),
     b0: Grid,
@@ -51,7 +54,13 @@ impl Boid {
     pub fn flock_scare(&mut self, factor: Option<f32>){
         self.flock_scare = factor;
     }
-    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T) {
+    pub fn step_draw_target<T: BoidCanvas>(&mut self, canvas: &mut T, target: (f32, f32), target_type: crate::boidee::TargetType){
+        Self::step_draw_generic_function(self, canvas, Some((Vector2{x: target.0, y: target.1}, target_type)))
+    }
+    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T){
+        Self::step_draw_generic_function(self, canvas, None,)
+    }
+    fn step_draw_generic_function<T: BoidCanvas>(&mut self, canvas: &mut T, target: Option<(Vector2, crate::boidee::TargetType)>) {
         let func_timer = Instant::now();
         // target buffer
         let b: &mut Grid;
@@ -71,12 +80,13 @@ impl Boid {
         std::thread::scope(|scope|{
             let thread_bounds = self.bounds;
             let thread_flock_scare = self.flock_scare;
+            let thread_target = target;
             let mut handles = vec![];
             for task in flattened_refs.chunks((flattened_refs.len() as f32 / self.cpus as f32).ceil() as usize){
                 handles.push(scope.spawn(move ||{
                     let mut ret = vec![];
                     for boidee in task{
-                        ret.push(boidee.step(c.get_cell_neighbors(&boidee), thread_bounds.0, thread_bounds.1, thread_flock_scare));
+                        ret.push(boidee.step(c.get_cell_neighbors(&boidee), thread_bounds.0, thread_bounds.1, thread_flock_scare, thread_target));
                     }
                     ret
                 }));

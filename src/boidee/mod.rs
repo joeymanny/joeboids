@@ -5,9 +5,17 @@ const MATCHING_FACTOR: f32 = 0.05;
 const CENTERING_FORCE: f32 = 0.0005;
 const MAX_SPEED: f32 = 8.0;
 const MIN_SPEED:f32 = 2.0;
+const CENTER_FORCE: f32 = 0.0005;
+const TARGET_FORCE: f32 = 0.001;
+const TARGET_AVOID_DISTANCE: f32 = 300.0;
 use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
+#[derive(Clone, Copy)]
+pub enum TargetType{
+    Avoid,
+    Approach
+}
 #[derive(Debug, Clone, PartialEq)]
 pub struct Boidee {
     pub position: Vector2,
@@ -46,7 +54,8 @@ impl Boidee {
         nearby_boids: Vec<Boidee>,
         min: (f32, f32),
         max: (f32, f32),
-        flock_scare: Option<f32>
+        flock_scare: Option<f32>,
+        target: Option<(Vector2, TargetType)>
     ) -> Boidee
     {
         let mut new_boid = self.clone();
@@ -85,8 +94,20 @@ impl Boidee {
         }
 
         // temporary rule: try to get to the center
-        new_boid.velocity += (Vector2{x: ((max.0 - min.0) as f32 / 2.0) + min.0 as f32, y: ((max.1 - min.1) as f32 / 2.0) + min.1 as f32} - new_boid.position) * 0.0005;
+        new_boid.velocity += (Vector2{x: ((max.0 - min.0) as f32 / 2.0) + min.0 as f32, y: ((max.1 - min.1) as f32 / 2.0) + min.1 as f32} - new_boid.position) * CENTER_FORCE;
 
+        // targeting: avoid or approach any targets
+        if let Some(config) = target{
+            let target_type = if let TargetType::Avoid = config.1{
+                let distance = (config.0 - self.position).abs();
+                if distance < TARGET_AVOID_DISTANCE{
+                    1.0 / distance * -300.0
+                } else {1.0}
+            }else{
+                1.0
+            };
+            new_boid.velocity += (config.0 - new_boid.position) * TARGET_FORCE * target_type;
+        }
         // step forward
         new_boid.position += new_boid.velocity;
 

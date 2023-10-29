@@ -11,6 +11,8 @@ use sdl2::keyboard::Keycode;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::ops::{Deref, DerefMut};
+use joeboid::boid::TargetType;
+
 #[derive(Parser)]
 #[clap(author="Joseph Peterson", version, about="Joe's crummy boid project")]
 struct Arguments{
@@ -116,7 +118,14 @@ pub fn main() {
         // tell the Boid what its new flock scare is
         flock_master.flock_scare(flock_scare);
         // step Boidees and draw to canvas
-        flock_master.step_draw(&mut canvas);
+        let mouse_state = event_pump.mouse_state();
+        if mouse_state.left(){
+            flock_master.step_draw_target(&mut canvas, (mouse_state.x() as f32, mouse_state.y() as f32), TargetType::Approach)
+        } else if mouse_state.right(){
+            flock_master.step_draw_target(&mut canvas, (mouse_state.x() as f32, mouse_state.y() as f32), TargetType::Avoid)
+        }else{
+            flock_master.step_draw(&mut canvas);
+        }
         // render
         canvas.present();
     }
