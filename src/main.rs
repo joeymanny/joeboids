@@ -2,8 +2,8 @@ extern crate sdl2;
 
 use clap::Parser;
 // use std::thread::sleep;
-use joeboid::boid::Boid;
-use joeboid::BoidCanvas;
+use joeboids::boid::Boid;
+use joeboids::BoidCanvas;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -11,7 +11,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::ops::{Deref, DerefMut};
-use joeboid::boid::TargetType;
+use joeboids::boid::TargetType;
 
 #[derive(Parser)]
 #[clap(author="Joseph Peterson", version, about="Joe's crummy boid project")]
