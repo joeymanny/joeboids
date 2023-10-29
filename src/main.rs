@@ -65,7 +65,7 @@ pub fn main() {
     let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.present();
     let bounds = canvas.output_size().unwrap().clone();
-    let mut flock_master = Boid::new((bounds.0 as usize, bounds.1 as usize));
+    let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)));
     flock_master.init_boidee_random(config.num);
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;

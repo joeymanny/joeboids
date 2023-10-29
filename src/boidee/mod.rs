@@ -13,7 +13,7 @@ pub struct Boidee {
     pub position: Vector2,
     pub velocity: Vector2,
 
-    chosen: bool
+    pub chosen: bool
 }
 impl std::fmt::Display for Boidee {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -25,13 +25,13 @@ impl std::fmt::Display for Boidee {
     }
 }
 impl Boidee {
-    pub fn random(bounds: (usize, usize)) -> Boidee {
+    pub fn random(min: (f32, f32), max: (f32, f32)) -> Boidee {
         let mut r = rand::thread_rng();
         let dir = (r.gen::<f32>() * 2.0 * PI).sin_cos();
         Boidee {
             position: Vector2::new(
-                r.gen::<f32>() * bounds.0 as f32,
-                r.gen::<f32>() * bounds.1 as f32,
+                (r.gen::<f32>() * max.0 - min.0 as f32) + min.0,
+                (r.gen::<f32>() * max.1 - min.1 as f32) + min.0,
             ),
             velocity: Vector2::new(dir.0, dir.1),
             chosen: false
@@ -47,7 +47,8 @@ impl Boidee {
     pub fn step(
         &self,
         nearby_boids: Vec<Boidee>,
-        bounds: (usize, usize),
+        min: (f32, f32),
+        max: (f32, f32),
         flock_scare: Option<f32>
     ) -> Boidee
     {
@@ -68,6 +69,10 @@ impl Boidee {
                 }
             }
         }
+        let scare_factor = match flock_scare{
+            Some(v) => v,
+            None => 1.0
+        };
         // rule 1 - seperation
         new_boid.velocity += close * AVOID_FACTOR;
 
@@ -75,35 +80,22 @@ impl Boidee {
 
             // rule 2 - alignment
             velocity_avg = velocity_avg / num_neighbors as f32;
-            new_boid.velocity += (velocity_avg - new_boid.velocity) * MATCHING_FACTOR;
+            new_boid.velocity += (velocity_avg - new_boid.velocity) * MATCHING_FACTOR * scare_factor;
 
             // rule 3 - cohesion
             position_avg = position_avg / num_neighbors as f32;
-            new_boid.velocity += (position_avg - new_boid.position) * CENTERING_FORCE;
+            new_boid.velocity += (position_avg - new_boid.position) * CENTERING_FORCE * scare_factor;
         }
+
         // temporary rule: try to get to the center
-        new_boid.velocity += (Vector2{x: bounds.0 as f32 / 2.0, y: bounds.1 as f32 / 2.0} - new_boid.position) * 0.0005;
+        new_boid.velocity += (Vector2{x: ((max.0 - min.0) as f32 / 2.0) + min.0 as f32, y: ((max.1 - min.1) as f32 / 2.0) + min.1 as f32} - new_boid.position) * 0.0005;
 
         // step forward
         new_boid.position += new_boid.velocity;
 
         // do donut world checks --------------------
-        new_boid.position = Vector2{x:new_boid.position.x % bounds.0 as f32, y:new_boid.position.y % bounds.1 as f32};
-        if new_boid.position.x < 0.0{
-            new_boid.position.x += bounds.0 as f32;
-        }
-        if new_boid.position.y < 0.0{
-            new_boid.position.y += bounds.1 as f32;
-        } // end donut world checks ----------------
+        // end donut world checks ----------------
 
-        // Once the velocity has been updated, compute the boid speed
-        // speed = sqrt(boid.vx*boid.vx + boid.vy*boid.vy)
-        // If speed>maxspeed:
-        // boid.vx = (boid.vx/speed)*maxspeed
-        // boid.vy = (boid.vy/speed)*minspeed
-        // If speed<minspeed:
-        // boid.vx = (boid.vx/speed)*minspeed
-        // boid.vy = (boid.vy/speed)*minspeed
         let speed = new_boid.velocity.abs();
         if speed > MAX_SPEED{
             new_boid.velocity = new_boid.velocity / speed;

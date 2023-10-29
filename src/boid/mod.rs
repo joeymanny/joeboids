@@ -6,7 +6,7 @@ use crate::{LOCAL_SIZE, SCHEDULE_NANOS};
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
 pub struct Boid{
-    bounds: (usize, usize),
+    bounds: ((f32, f32), (f32, f32)),
     b0: Grid,
     b1: Grid,
     switch: bool,
@@ -20,11 +20,11 @@ impl Boid {
     //         ..self
     //     }
     // }
-    pub fn new(bounds: (usize, usize)) -> Boid {
+    pub fn new(bounds: ((f32, f32), (f32, f32))) -> Boid {
         Boid {
             bounds: bounds,
-            b0: Grid::new(bounds, LOCAL_SIZE),
-            b1: Grid::new(bounds, LOCAL_SIZE),
+            b0: Grid::new(bounds.0, bounds.1, LOCAL_SIZE),
+            b1: Grid::new(bounds.0, bounds.1, LOCAL_SIZE),
             // indicates which buffer has the most up-to-date data
             // false = b0,
             // true = b1
@@ -35,14 +35,14 @@ impl Boid {
         }
     }
     pub fn init_boidee_random(&mut self, num: usize) {
-        let rand = Grid::random(num, self.bounds);
+        let rand = Grid::random(num, self.bounds.0, self.bounds.1);
         self.b0 = rand.clone();
         self.b1 = rand;
         self.switch = false;
 
     }
     pub fn init_boidee(&mut self, num: u32) {
-        let new = Grid::init_num(num, self.bounds);
+        let new = Grid::init_num(num, self.bounds.0, self.bounds.1);
         self.b0 = new.clone();
         self.b1 = new;
         // make sure we start knowing buffer 0 has the data
@@ -76,7 +76,7 @@ impl Boid {
                 handles.push(scope.spawn(move ||{
                     let mut ret = vec![];
                     for boidee in task{
-                        ret.push(boidee.step(c.get_cell_neighbors(&boidee), thread_bounds, thread_flock_scare));
+                        ret.push(boidee.step(c.get_cell_neighbors(&boidee), thread_bounds.0, thread_bounds.1, thread_flock_scare));
                     }
                     ret
                 }));
@@ -85,11 +85,7 @@ impl Boid {
                 buffer.append(&mut handle.join().unwrap());
             }
         });
-        // for current in c.cells.clone().into_iter().flatten().flatten() {
-        //     let new_boid= current.step(c, &self.bounds, self.flock_scare);
-        //     buffer.push(new_boid);
-        // }
-        *b = Grid::from_vec(buffer, self.bounds, LOCAL_SIZE);
+        *b = Grid::from_vec(buffer, LOCAL_SIZE);
         // the buffers have been updated
         //self.dt = Instant::now();
         self.switch = !self.switch;
