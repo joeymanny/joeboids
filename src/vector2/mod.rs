@@ -26,6 +26,30 @@ impl Vector2 {
     pub fn zero() -> Vector2{
         Vector2 { x: 0.0, y: 0.0 }
     }
+    pub fn left() -> Self{
+        Self {
+            x: -1.0,
+            y: 0.0
+        }
+    }
+    pub fn right() -> Self{
+        Self {
+            x: 1.0,
+            y: 0.0
+        }
+    }
+    pub fn up() -> Self{
+        Self {
+            x: 0.0,
+            y: 1.0
+        }
+    }
+    pub fn down() -> Self{
+        Self {
+            x: 0.0,
+            y: -1.0
+        }
+    }
 }
 
 impl Div<f32> for Vector2 {
