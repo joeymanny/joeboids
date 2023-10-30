@@ -23,9 +23,14 @@ struct Arguments{
     /// Window width
     width: u32,
     #[clap(long="height", default_value_t=600)]
-    /// Window width
+    /// Window height
     height: u32,
-
+    #[clap(long="tiny", short='t', default_value_t=false)]
+    /// Whether to make the boids tiny. This can be further configured with --tinyness
+    tiny: bool,
+    #[clap(long="tinyness", default_value_t= 0.5)]
+    /// Determines how tiny to make them. Has no effect if -t isn't set.
+    tinyness: f32
 }
 struct Wrapper(Canvas<Window>);
 
@@ -69,6 +74,9 @@ pub fn main() {
     let bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)));
     flock_master.init_boidee_random(config.num);
+    if config.tiny{
+        flock_master.set_tiny(Some(config.tinyness));
+    }
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
 
