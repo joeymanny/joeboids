@@ -18,6 +18,8 @@ pub struct Boid{
     flock_scare: Option<f32>,
     cpus: usize,
     tiny: Option<f32>,
+    avg_time: f32,
+    avg_times: usize
 }
 impl Boid {
     // fn update_grid(&mut self) -> Self{
@@ -38,7 +40,9 @@ impl Boid {
             //dt: Instant::now(),
             flock_scare: None,
             cpus: num_cpus::get(),
-            tiny: None
+            tiny: None,
+            avg_time: 0.0,
+            avg_times: 0
         }
     }
     pub fn set_tiny(&mut self, state: Option<f32>){
@@ -124,8 +128,16 @@ impl Boid {
         if let Some(v) = remaining{
             std::thread::sleep(v);
             println!("entire step_draw function was early by {:?}", v); // !!!
+            self.avg_time -= v.as_secs_f32();
+            self.avg_times += 1;
+            println!("average: {} seconds", self.avg_time / self.avg_times as f32);
         }else{
-            println!("entire step_draw function was late by {:?}", func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS)); // !!!
+            let lateness = func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS);
+            println!("entire step_draw function was late by {:?}", lateness); // !!!
+            self.avg_time += lateness.as_secs_f32();
+            self.avg_times += 1;
+            println!("average: {} seconds", self.avg_time / self.avg_times as f32);
+
         }        
     }
 }
