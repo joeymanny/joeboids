@@ -1,6 +1,5 @@
 # joeboids
-joe's crummy boid project
-
+simple implementation of boids in Rust using rayon for multithreading. thoeretically runs anywhere you can define a triangle drawing function.
 
 ### joe's TODOs:
 - restrict their vision
