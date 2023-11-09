@@ -10,6 +10,7 @@ rand = "0.8.4"
 num_cpus = "1.16.0"
 clap = {version = "4.4.6", features = ["derive"]}
 rayon = "1.8"
+cfg-if = "1.0.0"
 
 [dependencies.sdl2]
 version = "0.35.0"
@@ -18,3 +19,7 @@ version = "0.35.0"
 [profile.windows_gnu]
 inherits = "release"
 debug = "line-tables-only"
+
+[features]
+visualize_neighbors = []
+print_timings = []
