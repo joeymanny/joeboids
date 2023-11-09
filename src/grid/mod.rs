@@ -70,14 +70,6 @@ impl Grid{
         let y_max = index_y >= ((self.max.1 - self.min.1) as f32 * self.fac).floor() as usize;
         let x_max = index_x >= ((self.max.0 - self.min.0) as f32 * self.fac).floor() as usize;
         
-        //left
-            //upper left
-            //lower left
-        //right
-            //uppper right
-            //lower left
-        //up
-        //down
         if !x_0{
             // left
             rtrn.append(&mut self.cells[index_x - 1][index_y].clone());

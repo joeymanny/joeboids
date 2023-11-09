@@ -16,7 +16,6 @@ pub struct Boid{
     b1: Grid,
     switch: bool,
     flock_scare: Option<f32>,
-    cpus: usize,
     tiny: Option<f32>,
     avg_time: f32,
     avg_times: usize
@@ -39,7 +38,6 @@ impl Boid {
             switch: false,
             //dt: Instant::now(),
             flock_scare: None,
-            cpus: num_cpus::get(),
             tiny: None,
             avg_time: 0.0,
             avg_times: 0
@@ -68,7 +66,8 @@ impl Boid {
     pub fn step_draw_target<T: BoidCanvas>(&mut self, canvas: &mut T, target: (f32, f32), target_type: crate::boidee::TargetType){
         Self::step_draw_generic_function(self, canvas, Some((Vector2{x: target.0, y: target.1}, target_type)))
     }
-    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T){
+    pub fn step_draw<T: BoidCanvas>(&mut self, canvas: &mut T)
+    {
         Self::step_draw_generic_function(self, canvas, None,)
     }
     fn step_draw_generic_function<T: BoidCanvas>(&mut self, canvas: &mut T, target: Option<(Vector2, crate::boidee::TargetType)>) {
@@ -84,25 +83,82 @@ impl Boid {
             b = &mut self.b1;
             c = &self.b0;
         }
-        // flattened Vec over boidees
-        let result: Vec<Boidee> = c.iterate_flattened().collect::<Vec<&Boidee>>()
-            .into_par_iter().map(
-                |boid|{ boid.step(
-                        c.get_cell_neighbors(boid),
-                        self.bounds.0, self.bounds.1,
-                        self.flock_scare,
-                        target
-                    )
-                }
-            )
-        .collect();
-        *b = Grid::from_vec(result, LOCAL_SIZE);
-        // the buffers have been updated
-        //self.dt = Instant::now();
-        self.switch = !self.switch;
         let tinyness = if let Some(v) = self.tiny{
             v
         }else {1.0};
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "visualize_neighbors")] {
+                let result: Vec<(Boidee, Option<Vec<Boidee>>)> = c.iterate_flattened().collect::<Vec<&Boidee>>()
+                .into_par_iter().map(
+                    |boid|{
+                        let neighbors = c.get_cell_neighbors(boid);
+                        let returned_neighbors = if boid.chosen{
+                            Some(neighbors.clone())
+                        }else{
+                            None
+                        };
+                        (boid.step(
+                            neighbors,
+                            self.bounds.0, self.bounds.1,
+                            self.flock_scare,
+                            target
+                        ), returned_neighbors)
+                    }
+                )
+                .collect();
+                for (boid, neighbors) in result.iter(){
+                    if boid.chosen{
+                        if boid.chosen{
+                            for neigh in neighbors.as_ref().unwrap(){
+                                if (neigh.position - boid.position).abs() < LOCAL_SIZE{
+                                    let direction = neigh.velocity.normalized();
+                                    canvas
+                                        .draw_triangle(
+                                            (  
+                                                neigh.position.x as i32,
+                                                neigh.position.y as i32,
+                                            ),
+                                            // bottom left: (sin+90 * fac) + world
+                                            (
+                                                boid.position.x as i32,
+                                                boid.position.y as i32,
+                                            ),
+                                            // bottom right: (sin-90 * fac) + world
+                                            (
+                                                (boid.position.x as f32) as i32,
+                                                (boid.position.y as f32) as i32,
+                                            ),
+                                        )
+                                        .unwrap();
+                        
+                                }
+
+                            }
+                        }
+                    }
+                }
+                let result: Vec<Boidee> = result.into_iter().map(|(boid, _)| boid).collect();
+            } else{
+                let result: Vec<Boidee> = c.iterate_flattened().collect::<Vec<&Boidee>>()
+                .into_par_iter().map(
+                    |boid|{ boid.step(
+                            c.get_cell_neighbors(boid),
+                            self.bounds.0, self.bounds.1,
+                            self.flock_scare,
+                            target
+                        )
+                    }
+                )
+                .collect();
+            }
+        }
+        
+        // flattened Vec over boidees
+
+        *b = Grid::from_vec(result, LOCAL_SIZE * 1.0);
+        // the buffers have been updated
+        //self.dt = Instant::now();
+        self.switch = !self.switch;
         for new_boid in c.iterate_flattened() {
             let direction = new_boid.velocity.normalized();
             canvas
@@ -127,16 +183,18 @@ impl Boid {
         let remaining = Duration::from_nanos(SCHEDULE_NANOS).checked_sub(func_timer.elapsed());
         if let Some(v) = remaining{
             std::thread::sleep(v);
-            println!("entire step_draw function was early by {:?}", v); // !!!
+            #[cfg(feature = "print_timings")]
+            {println!("entire step_draw function was early by {:?}", v); // !!!
             self.avg_time -= v.as_secs_f32();
             self.avg_times += 1;
-            println!("average: {} seconds", self.avg_time / self.avg_times as f32);
+            println!("average: {} seconds", self.avg_time / self.avg_times as f32);}
         }else{
-            let lateness = func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS);
+            #[cfg(feature = "print_timings")]
+            {let lateness = func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS);
             println!("entire step_draw function was late by {:?}", lateness); // !!!
             self.avg_time += lateness.as_secs_f32();
             self.avg_times += 1;
-            println!("average: {} seconds", self.avg_time / self.avg_times as f32);
+            println!("average: {} seconds", self.avg_time / self.avg_times as f32);}
         }
     }
 }
