@@ -64,7 +64,7 @@ impl Grid{
         let mut rtrn: Vec<Boidee> = vec![];
         let index_x: usize = ((sub.position.x - self.min.0) * self.fac).floor() as usize;
         let index_y: usize = ((sub.position.y - self.min.1) * self.fac).floor() as usize;
-        let sub_cell = self.cells[index_x][index_y].clone();
+        let our_cell = self.cells[index_x][index_y].clone();
         let x_0 = index_x <= 1;
         let y_0 = index_y <= 1;
         let y_max = index_y >= ((self.max.1 - self.min.1) as f32 * self.fac).floor() as usize;
@@ -113,7 +113,7 @@ impl Grid{
             rtrn.append(&mut self.cells[index_x][index_y - 1].clone());
         }
         // we also need our own cell of course
-        rtrn.append(&mut sub_cell.clone());
+        rtrn.append(&mut our_cell.clone());
         rtrn.append(&mut self.cells[self.cells.len() - 1][self.cells[self.cells.len() - 1].len() - 1].clone());
 
         rtrn
