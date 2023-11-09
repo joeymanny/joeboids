@@ -137,7 +137,6 @@ impl Boid {
             self.avg_time += lateness.as_secs_f32();
             self.avg_times += 1;
             println!("average: {} seconds", self.avg_time / self.avg_times as f32);
-
-        }        
+        }
     }
 }
