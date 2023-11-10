@@ -62,7 +62,7 @@ impl Boidee {
         min: (f32, f32),
         max: (f32, f32),
         flock_scare: Option<f32>,
-        target: Option<(Vector2, TargetType)>
+        target: Option<((f32, f32), TargetType)>
     ) -> Boidee
     {
         let mut new_boid = self.clone();
@@ -105,14 +105,15 @@ impl Boidee {
 
         // targeting: avoid or approach any targets
         if let Some(config) = target{
-            let distance = (config.0 - self.position).abs();
+            let target_pos = Vector2::new(config.0.0, config.0.1);
+            let distance = (target_pos - self.position).abs();
             if distance < TARGETING_DISTANCE{
             let target_type = if let TargetType::Avoid = config.1{
                     1.0 / distance * -TARGETING_DISTANCE
             }else{
                 1.0 / distance * TARGETING_DISTANCE
             };
-            new_boid.velocity += (config.0 - new_boid.position) * TARGET_FORCE * target_type;
+            new_boid.velocity += (target_pos - new_boid.position) * TARGET_FORCE * target_type;
         }
         }
         let x_border = (max.0 - min.0) / EDGE_AVOIDANCE_MARGIN;
