@@ -23,5 +23,7 @@ The visualize_neighbors feature will choose one boid and draw a line from it to 
 The print_timings feature will print how early/late the step function was in relation to its schedule (I made the default 120 fps for some reason--oh well)
 
 
+Oh yeah and left/right click do things, as well as spacebar.
+
 # h
 
