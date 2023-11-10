@@ -68,12 +68,28 @@ impl Boid {
         self.flock_scare = factor;
     }
 
+    /// Same as [`set_flock_scare`], except returns `self` for nicer chaining.
+    pub fn with_flock_scare(self, factor: Option<f32>) -> Self{
+        Self{
+            flock_scare: factor,
+            ..self
+        }
+    }
+
     /// Sets whether to draw [`Boidee`]s tiny, and if so how much. Values closer to zero are smaller.
     /// You can also use this function to draw big boidees (their radius of perception will remain the same,
     /// so resizing can make things look strange sometimes).
     /// This value being `None` does the same thing as `Some(1.0)`
     pub fn set_tiny(&mut self, state: Option<f32>){
         self.tiny = state;
+    }
+
+    /// Same as [`set_tiny`], except returns `self` for nicer chaining.
+    pub fn with_tiny(self, state: Option<f32>) -> Self{
+        Self{
+            tiny: state,
+            ..self
+        }
     }
 
     /// Sets the "bounds" of the [`Boidee`]s. When they are within 1/10th of width/height to an edge, they will 
@@ -85,10 +101,26 @@ impl Boid {
         self.bounds = new;
     }
 
+    /// Same as [`set_bounds`], except returns `self` for nicer chaining.
+    pub fn with_bounds(self, new: ((f32, f32),(f32, f32))) -> Self{
+        Self{
+            bounds: new,
+            ..self
+        }
+    }
+
     /// Sets the schedule of the [step_on_schedule](Boid::step_on_schedule) function. If it gets done stepping and
     /// drawing boidees before time, it will sleep the remaining time.
     pub fn set_schedule(&mut self, new: Option<Duration>){
         self.schedule = new;
+    }
+
+    /// Same as [`set_schedule`], excepts returns `self` for nicer chaining.
+    pub fn with_schedule(self, new: Option<Duration>) -> Self{
+        Self{
+            schedule: new,
+            ..self
+        }
     }
 
     /// Gets the schedule of the [`Boid`].
@@ -116,7 +148,7 @@ impl Boid {
                 println!("average: {} seconds", self.avg_time / self.avg_times as f32);}
             }else{
                 #[cfg(feature = "print_timings")]
-                {let lateness = func_timer.elapsed() - Duration::from_nanos(SCHEDULE_NANOS);
+                {let lateness = func_timer.elapsed() - Duration::from_nanos(16_666_666);
                 println!("entire step_draw function was late by {:?}", lateness); // !!!
                 self.avg_time += lateness.as_secs_f32();
                 self.avg_times += 1;
@@ -176,7 +208,7 @@ impl Boid {
             c = &self.b0;
         }
         cfg_if::cfg_if! {
-            if #[cfg(feature = "visualize_neighbors")] {
+            if #[cfg(feature = "visualize_neighbors")] { // IF VISUALIZE NEIGHBORS FEATURE IS SET ------------------------------
                 let result: Vec<(Boidee, Option<Vec<Boidee>>)> = c.iterate_flattened().collect::<Vec<&Boidee>>()
                 .into_par_iter().map(
                     |boid|{
@@ -227,7 +259,7 @@ impl Boid {
                     }
                 }
                 let result: Vec<Boidee> = result.into_iter().map(|(boid, _)| boid).collect();
-            } else{
+            } else{ // IF VISUALIZE NEIGHBORS FEATURE ISN'T SET ----------------------------------------------------------------
                 let result: Vec<Boidee> = c.iterate_flattened().collect::<Vec<&Boidee>>()
                 .into_par_iter().map(
                     |boid|{ boid.step(
@@ -240,7 +272,7 @@ impl Boid {
                 )
                 .collect();
             }
-        }
+        } // END CFG_IF SECTION ------------------------------------------------------------------------------------------------
         
         // flattened Vec over boidees
 
