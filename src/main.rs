@@ -10,8 +10,7 @@ use sdl2::keyboard::Keycode;
 // use std::time::Duration;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use std::ops::{Deref, DerefMut};
-use joeboids::boid::TargetType;
+use std::{ops::{Deref, DerefMut}, time::{Duration, Instant}};
 
 #[derive(Parser)]
 #[clap(author="Joseph Peterson", version, about="Joe's crummy boid project")]
@@ -72,15 +71,17 @@ pub fn main() {
     let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
     canvas.present();
     let bounds = canvas.output_size().unwrap().clone();
-    let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)));
+    let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)), Some(Duration::from_nanos(16_666_666)));
     flock_master.init_boidee_random(config.num);
     if config.tiny{
         flock_master.set_tiny(Some(config.tinyness));
     }
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut flock_scare: Option<f32> = None;
-
+    let mut toggle_timer = Duration::ZERO;
+    let mut dt = Instant::now();
     'running: loop {
+        toggle_timer = toggle_timer.saturating_sub(dt.elapsed());
         // see if at any point they tried to leave the application
         // will be added to queue so it'll work even between checks
         for event in event_pump.poll_iter(){
@@ -94,10 +95,36 @@ pub fn main() {
                 _ => ()
             }
         }
+
+
         // set draw color to white
         canvas.set_draw_color(Color::RGB(255, 255, 255));
 
-        // if space is being pressed this frame, panic. won't be added to queue, 
+        if flock_master.schedule().is_some() && event_pump.keyboard_state().is_scancode_pressed(sdl2::keyboard::Scancode::U){
+            let new_schedule = flock_master.schedule().unwrap().saturating_sub(Duration::from_millis(1));
+            flock_master.set_schedule(Some(new_schedule));
+            println!("new schedule: {:?}", flock_master.schedule().unwrap());
+        }
+        if flock_master.schedule().is_some() && event_pump.keyboard_state().is_scancode_pressed(sdl2::keyboard::Scancode::J){
+            let new_schedule =flock_master.schedule().unwrap().saturating_add(Duration::from_millis(1));
+            flock_master.set_schedule(Some(new_schedule));
+            println!("new schedule: {:?}", flock_master.schedule().unwrap());
+        }
+        if event_pump.keyboard_state().is_scancode_pressed(sdl2::keyboard::Scancode::M) && toggle_timer == Duration::ZERO{
+            if flock_master.schedule().is_some(){
+                flock_master.set_schedule(None);
+                println!("schedule removed: stepping and drawing as fast as possile");
+            }else{
+                flock_master.set_schedule(Some(Duration::from_nanos(16_666_666)));
+                println!("new schedule: {:?}", flock_master.schedule().unwrap());
+            }
+            toggle_timer = Duration::from_secs_f32(0.2);
+        }
+
+        dt = Instant::now();
+
+
+        // if space is being pressed this frame, floc. won't be added to queue, 
         // only happens if it is being pressed RIGHT NOW. more responsvie
         if event_pump.keyboard_state().is_scancode_pressed(sdl2::keyboard::Scancode::Space){
             // clear screen
@@ -124,15 +151,15 @@ pub fn main() {
             canvas.set_draw_color(Color::RGB(255, 255, 255));
         }
         // tell the Boid what its new flock scare is
-        flock_master.flock_scare(flock_scare);
+        flock_master.set_flock_scare(flock_scare);
         // step Boidees and draw to canvas
         let mouse_state = event_pump.mouse_state();
         if mouse_state.left(){
-            flock_master.step_draw_target(&mut canvas, (mouse_state.x() as f32, mouse_state.y() as f32), TargetType::Approach)
+            flock_master.step_on_schedule(&mut canvas, Some(((mouse_state.x() as f32, mouse_state.y() as f32), joeboids::TargetType::Approach)));
         } else if mouse_state.right(){
-            flock_master.step_draw_target(&mut canvas, (mouse_state.x() as f32, mouse_state.y() as f32), TargetType::Avoid)
+            flock_master.step_on_schedule(&mut canvas, Some(((mouse_state.x() as f32, mouse_state.y() as f32), joeboids::TargetType::Avoid)));
         }else{
-            flock_master.step_draw(&mut canvas);
+            flock_master.step_on_schedule(&mut canvas, None);
         }
         // render
         canvas.present();
