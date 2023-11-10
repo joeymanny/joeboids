@@ -1,3 +1,5 @@
+
+
 Simple implementation of [boids](https://en.wikipedia.org/wiki/Boids).
 
 
@@ -9,4 +11,9 @@ Use the U/J keys to decrease/increase how long one step if schedules to take, us
 
 This is a silly little project that I used to get more comfortable with Rust, and it has certainly done that.
 
+
+Use `-h` for options (naturally).
+
+
 # h
+
