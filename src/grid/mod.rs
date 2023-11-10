@@ -62,9 +62,9 @@ impl Grid{
         }
         Self { max, min, cells, fac }
     }
-    pub fn get_cell_neighbors(&self, sub: &Boidee) -> Vec<Boidee>{
+    pub fn get_cell_neighbors(&self, sub: &Boidee) -> Vec<&Boidee>{
         // we need to subtract min from the postition before using it as an index
-        let mut neighbors: Vec<Boidee> = vec![];
+        let mut neighbors: Vec<&Boidee> = vec![];
         let index_x: usize = ((sub.position.x - self.min.0) * self.fac).floor() as usize;
         let index_y: usize = ((sub.position.y - self.min.1) * self.fac).floor() as usize;
         let x_0 = index_x <= 1;
@@ -74,38 +74,38 @@ impl Grid{
         
         if !x_0{
             // left
-            neighbors.append(&mut self.cells[index_x - 1][index_y].clone());
+            neighbors.extend(&mut self.cells[index_x - 1][index_y].iter());
             if !y_0{
                 //upper left
-                neighbors.append(&mut self.cells[index_x - 1][index_y - 1].clone());
+                neighbors.extend(&mut self.cells[index_x - 1][index_y - 1].iter());
             }
             if !y_max{
                 // lower left
-                neighbors.append(&mut self.cells[index_x - 1][index_y + 1].clone());
+                neighbors.extend(&mut self.cells[index_x - 1][index_y + 1].iter());
             }
         }
         if !x_max{
             //right
-            neighbors.append(&mut self.cells[index_x + 1][index_y].clone());
+            neighbors.extend(&mut self.cells[index_x + 1][index_y].iter());
             if !y_0{
                 // upper right
-                neighbors.append(&mut self.cells[index_x + 1][index_y - 1].clone());
+                neighbors.extend(&mut self.cells[index_x + 1][index_y - 1].iter());
             }
             if !y_max{
                 // lower right
-                neighbors.append(&mut self.cells[index_x + 1][index_y + 1].clone());
+                neighbors.extend(&mut self.cells[index_x + 1][index_y + 1].iter());
             }
         }
         if !y_max{
             // down
-            neighbors.append(&mut self.cells[index_x][index_y + 1].clone());
+            neighbors.extend(&mut self.cells[index_x][index_y + 1].iter());
         }
         if !y_0{
             // up
-            neighbors.append(&mut self.cells[index_x][index_y - 1].clone());
+            neighbors.extend(&mut self.cells[index_x][index_y - 1].iter());
         }
         // we also need our own cell of course
-        neighbors.append(&mut self.cells[index_x][index_y].clone());
+        neighbors.extend(&mut self.cells[index_x][index_y].iter());
         // neighbors.append(&mut self.cells[self.cells.len() - 1][self.cells[self.cells.len() - 1].len() - 1].clone());
 
         neighbors
