@@ -1,7 +1,7 @@
 use crate::LOCAL_SIZE;
-use crate::boid::Boid;
+// use crate::boid::Boid;
 use crate::boidee::Boidee;
-use crate::vector2::Vector2;
+// use crate::vector2::Vector2;
 #[derive(Clone, Debug)]
 pub struct Grid{
     max: (f32, f32),
@@ -136,14 +136,6 @@ if #[cfg(feature = "visualize_neighbors")]{
     }
 }
 }
-    pub fn init_num(num: u32) -> Grid{
-        let mut v:Vec<Boidee> = vec![];
-        for _ in 0..num{
-            v.push(Boidee::new());
-        }
-        Grid::from_vec(v, LOCAL_SIZE)
-    }
-
     fn init_grid_vec(max: (usize, usize), fac: f32) -> Vec<Vec<Vec<Boidee>>> {
         let mut x_array: Vec<Vec<Vec<Boidee>>> = Vec::new();
         for _ in 0..(((max.0  as f32 * fac)).ceil() as usize){
