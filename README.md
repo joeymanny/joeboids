@@ -12,7 +12,7 @@ Use the U/J keys to decrease/increase how long one `step` takes, use M to set it
 This is a silly little project that I used to get more comfortable with Rust, and it has certainly done that.
 
 
-Use `-h` for options (naturally).
+Use `-h` for help with options (naturally).
 
 
 Also you can have tiny boids, they're adorable.
