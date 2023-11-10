@@ -27,10 +27,11 @@ impl Boid {
     /// state (i.e. which `Grid` of [`Boidee`]s to use) and so are private. The `Grid`s start empty, and
     /// must be poulated with [init_boidee](crate::boid::Boid::init_boidees) or [init_boidee_random](crate::boid::Boid::init_boidee_random)
     pub fn new(bounds: ((f32, f32), (f32, f32)), schedule: Option<Duration>) -> Boid {
+        let empty_grid = Grid::new(bounds.0, bounds.1, LOCAL_SIZE);
         Boid {
             bounds: bounds,
-            b0: Grid::new(bounds.0, bounds.1, LOCAL_SIZE),
-            b1: Grid::new(bounds.0, bounds.1, LOCAL_SIZE),
+            b0: empty_grid.clone(),// ew
+            b1: empty_grid,
             switch: false,
             //dt: Instant::now(),
             flock_scare: None,
@@ -126,6 +127,21 @@ impl Boid {
     /// Gets the schedule of the [`Boid`].
     pub fn schedule(&self) -> Option<Duration>{
         self.schedule
+    }
+
+    pub fn set_boidees(&mut self, v: Vec<Boidee>){
+        self.b1 = Grid::from_vec(v, LOCAL_SIZE);
+        self.switch = true; // this is why you're not allowed directly access fields,
+                            // self.b0 currently contains the wrong data
+    }
+
+    pub fn with_boidees(self, v: Vec<Boidee>) -> Self{
+        Self{
+            b1: Grid::from_vec(v, LOCAL_SIZE),
+            switch: true, // this is why you're not allowed directly access fields,
+            ..self        // self.b0 currently contains the wrong data
+    
+        }
     }
 
     /// Updates then displays the [`Boidee`]s held by the [`Boid`]. If it gets done before [`schedule`](Boid::schedule) time has elapsed, it
