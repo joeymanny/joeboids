@@ -58,7 +58,7 @@ impl Boidee {
     }
     pub fn step(
         &self,
-        nearby_boids: Vec<Boidee>,
+        nearby_boids: Vec<&Boidee>,
         min: (f32, f32),
         max: (f32, f32),
         flock_scare: Option<f32>,
