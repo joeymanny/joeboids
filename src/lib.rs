@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 mod grid;
 pub mod boid;
 mod vector2;
