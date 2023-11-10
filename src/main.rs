@@ -16,19 +16,19 @@ use std::{ops::{Deref, DerefMut}, time::{Duration, Instant}};
 #[clap(author="Joseph Peterson", version, about="Joe's crummy boid project")]
 struct Arguments{
     #[clap(short='n', long="num", default_value_t=200)]
-    /// Number of bird-like-objects to conjure
+    /// Number of bird-like-objects to conjure.
     num: usize,
     #[clap(long="width", default_value_t=800)]
-    /// Window width
+    /// Window width.
     width: u32,
     #[clap(long="height", default_value_t=600)]
-    /// Window height
+    /// Window height.
     height: u32,
     #[clap(long="tiny", short='t', default_value_t=false)]
-    /// Whether to make the boids tiny. This can be further configured with --tinyness
+    /// Whether to make the boids tiny. You can specify exactly how tiny with --tinyness.
     tiny: bool,
     #[clap(long="tinyness", default_value_t= 0.5)]
-    /// Determines how tiny to make them. Has no effect if -t isn't set.
+    /// Determines how tiny to make them. Has no effect if -t isn't set. If this is > 1.0 they'll be big.
     tinyness: f32
 }
 struct Wrapper(Canvas<Window>);
