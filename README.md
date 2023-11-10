@@ -20,7 +20,7 @@ Also you can have tiny boids, they're adorable.
 
 
 The visualize_neighbors feature will choose one boid and draw a line from it to al its neighbors.
-The print_timings feature will print how early/late the step function was in relation to its schedule (defaults to 120 fps for some reason--oh well)
+The print_timings feature will print how early/late the step function was in relation to its schedule (I made the default 120 fps for some reason--oh well)
 
 
 # h
