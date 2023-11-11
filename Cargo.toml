@@ -1,26 +1,11 @@
-[package]
-name = "joeboids"
-version = "0.1.0"
-edition = "2021"
-authors = ["joe"]
-license = "Unlicense"
-description = "Simple, cpu-based, multithreaded implementation of boids"
-repository = "https://github.com/joeymanny/joeboids"
-readme = "README.md"
-keywords = ["boids", "life simulation", "fun", "terrible", "h"]
-categories = ["games", "simulation"]
+[workspace]
+resolver = "2"
+members = [
+    "joeboids",
+    "example_realtime"
+]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-rand = "0.8.4"
-rayon = "1.8"
-cfg-if = "1.0.0"
-
-[dependencies.sdl2]
-version = "0.35.0"
-# features = ["bundled"]
-
-[features]
-visualize_neighbors = []
-print_timings = []
+[profile.windows_gnu]
+inherits = "release"
+debug = "line-tables-only"
