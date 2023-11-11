@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
     "joeboids",
-    "example_realtime"
+    "example_realtime",
+    "example_rendered"
 ]
 
 
