@@ -1,4 +1,3 @@
-use crate::LOCAL_SIZE;
 // use crate::boid::Boid;
 use crate::boidee::Boidee;
 // use crate::vector2::Vector2;
@@ -112,7 +111,7 @@ impl Grid{
     }
 cfg_if::cfg_if!{
 if #[cfg(feature = "visualize_neighbors")]{
-    pub fn random(num: usize, min: (f32, f32), max: (f32, f32)) -> Grid{
+    pub fn random(num: usize, fac: f32, min: (f32, f32), max: (f32, f32)) -> Grid{
         let mut v:Vec<Boidee> = vec![];
         let mut chosen = Boidee{
             chosen: true,
@@ -122,16 +121,16 @@ if #[cfg(feature = "visualize_neighbors")]{
         for _ in 1..num {
             v.push(Boidee::random(min, max));
         }
-        Grid::from_vec(v, LOCAL_SIZE)
+        Grid::from_vec(v, fac)
 
     }
 }else{
-    pub fn random(num: usize, min: (f32, f32), max: (f32, f32)) -> Grid{
+    pub fn random(num: usize, fac: f32, min: (f32, f32), max: (f32, f32)) -> Grid{
         let mut v:Vec<Boidee> = vec![];
         for _ in 0..num {
             v.push(Boidee::random(min, max));
         }
-        Grid::from_vec(v, LOCAL_SIZE)
+        Grid::from_vec(v, fac)
 
     }
 }
