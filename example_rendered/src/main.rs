@@ -62,7 +62,7 @@ pub fn main() {
     }
     println!("doing pre-render stepping ...");
     flock_master.init_boidee_random(args.num);
-    (0..500).into_iter().progress().for_each(|_|{
+    (0..args.pre_steps).into_iter().progress().for_each(|_|{
         flock_master.raw_step(None);
     });
     println!("Rendering png sequence to {}/ ...", args.output_directory);
@@ -72,6 +72,7 @@ pub fn main() {
             writer: new_png_writer(format!("{}/{}.png", args.output_directory, frame_num).as_str(), args.width, args.height),
         }; // canvas is new ready to draw to a new file
         // draw to the buffer of bools
+        (0..args.in_betweens).for_each(|_|{flock_master.raw_step(None)});
         flock_master.step_on_schedule(&mut canvas, None);
         // draw to the file
         canvas.write().unwrap();
@@ -134,6 +135,10 @@ struct Arguments{
     #[clap(long="frames", short='f', default_value_t=300)]
     /// Number of frames to write to the target directory. These will be named in sequence, i.e. 1.png 2.png 3.png etc.
     frames: usize,
+    #[clap(long="prestep", short='p', default_value_t=200)]
+    pre_steps: u32,
+    #[clap(long="inbetweens", short='b', default_value_t=3)]
+    in_betweens: u32,
 }
 
 // buffer of bools we can 'draw' to
