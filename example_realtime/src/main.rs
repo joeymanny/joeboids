@@ -35,7 +35,11 @@ struct Wrapper(Canvas<Window>);
 
 //NOTE: idea: have the title bar update with some info. use set_title() on the window
 impl BoidCanvas for Wrapper {
-    fn draw_triangle(&mut self, p1: (i32, i32), p2: (i32, i32), p3: (i32, i32)) -> Result<(), String> {
+    fn draw_triangle(&mut self, p1: (f32, f32), p2: (f32, f32), p3: (f32, f32)) -> Result<(), String> {
+        let p1 = (p1.0.round() as i32, p1.1.round() as i32);
+        let p2 = (p2.0.round() as i32, p2.1.round() as i32);
+        let p3 = (p3.0.round() as i32, p3.1.round() as i32);
+
         self.0.draw_line(p1, p2)?;
         self.0.draw_line(p2, p3)?;
         self.0.draw_line(p3, p1)?;
@@ -68,7 +72,7 @@ pub fn main() {
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.set_draw_color(Color::RGB(255, 255, 255));
-    let _ = canvas.draw_triangle((4, 22), (66, 77), (99, 200));
+    let _ = canvas.draw_triangle((4.0, 22.0), (66.0, 77.0), (99.0, 200.0));
     canvas.present();
     let bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)), Some(Duration::from_nanos(16_666_666)));
