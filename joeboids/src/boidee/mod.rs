@@ -1,17 +1,20 @@
-const PROTECTED_RANGE: f32 = 8.0;
-const VISUAL_RANGE: f32 = 40.0;
+// const PROTECTED_RANGE: f32 = 8.0;
+// const VISUAL_RANGE: f32 = 40.0;
 const AVOID_FACTOR: f32 = 0.05;
 const MATCHING_FACTOR: f32 = 0.05;
 const CENTERING_FORCE: f32 = 0.0005;
 const MAX_SPEED: f32 = 7.0;
-const MIN_SPEED:f32 = 2.0;
+const MIN_SPEED:f32 = 3.0;
 const TARGET_FORCE: f32 = 0.001;
-const TARGETING_DISTANCE: f32 = 300.0;
 const EDGE_AVOIDANCE_FORCE: f32 = 0.07;
 const EDGE_AVOIDANCE_MARGIN: f32 = 6.0; // boids will avoid the edge when one tenth of the whole screen from the edge
+const TARGETING_VISUAL_BOOST_FAC: f32 = 5.0;
+const FRICTION: f32 = 0.99;
+
 use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
+
 #[derive(Clone, Copy)]
 pub enum TargetType{
     Avoid,
@@ -62,10 +65,12 @@ impl Boidee {
         min: (f32, f32),
         max: (f32, f32),
         flock_scare: Option<f32>,
-        target: Option<((f32, f32), TargetType)>
+        target: Option<((f32, f32), TargetType)>,
+        visual_range: f32,
     ) -> Boidee
     {
         let mut new_boid = self.clone();
+        new_boid.velocity = new_boid.velocity *  FRICTION;
         let mut close: Vector2 = Vector2::zero();
         let mut velocity_avg = Vector2::zero();
         let mut position_avg = Vector2::zero();
@@ -73,11 +78,11 @@ impl Boidee {
     // we're gonna return a modified version of ourself
         for near in nearby_boids{
             let distance = (near.position - self.position).abs();
-            if distance < VISUAL_RANGE{
+            if distance < visual_range{
                 num_neighbors += 1;
                 velocity_avg += near.velocity;
                 position_avg += near.position;
-                if distance < PROTECTED_RANGE {
+                if distance < (visual_range * 0.2 ) { // protected range is 1/40th visual range (just the ratio i used before geting rid of consts)
                     close += self.position - near.position;
                 }
             }
@@ -100,20 +105,18 @@ impl Boidee {
             new_boid.velocity += (position_avg - new_boid.position) * CENTERING_FORCE * scare_factor;
         }
 
-        // temporary rule: try to get to the center
-        // new_boid.velocity += (Vector2{x: ((max.0 - min.0) as f32 / 2.0) + min.0 as f32, y: ((max.1 - min.1) as f32 / 2.0) + min.1 as f32} - new_boid.position) * CENTER_FORCE;
 
         // targeting: avoid or approach any targets
         if let Some(config) = target{
             let target_pos = Vector2::new(config.0.0, config.0.1);
             let distance = (target_pos - self.position).abs();
-            if distance < TARGETING_DISTANCE{
-            let target_type = if let TargetType::Avoid = config.1{
-                    1.0 / distance * -TARGETING_DISTANCE
+            if distance < visual_range * TARGETING_VISUAL_BOOST_FAC{
+            let target_fac = if let TargetType::Avoid = config.1{
+                    1.0 / distance * -visual_range * TARGETING_VISUAL_BOOST_FAC
             }else{
-                1.0 / distance * TARGETING_DISTANCE
+                1.0 / distance * visual_range * TARGETING_VISUAL_BOOST_FAC
             };
-            new_boid.velocity += (target_pos - new_boid.position) * TARGET_FORCE * target_type;
+            new_boid.velocity += (target_pos - new_boid.position) * TARGET_FORCE * target_fac;
         }
         }
         let x_border = (max.0 - min.0) / EDGE_AVOIDANCE_MARGIN;
