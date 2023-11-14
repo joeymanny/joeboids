@@ -9,7 +9,7 @@ const TARGET_FORCE: f32 = 0.001;
 const EDGE_AVOIDANCE_FORCE: f32 = 0.07;
 const EDGE_AVOIDANCE_MARGIN: f32 = 6.0; // boids will avoid the edge when one tenth of the whole screen from the edge
 const TARGETING_VISUAL_BOOST_FAC: f32 = 5.0;
-const FRICTION: f32 = 0.99;
+const FRICTION: f32 = 0.999;
 
 use crate::vector2::Vector2;
 use rand::prelude::*;
@@ -70,7 +70,7 @@ impl Boidee {
     ) -> Boidee
     {
         let mut new_boid = self.clone();
-        new_boid.velocity = new_boid.velocity *  FRICTION;
+
         let mut close: Vector2 = Vector2::zero();
         let mut velocity_avg = Vector2::zero();
         let mut position_avg = Vector2::zero();
@@ -136,9 +136,8 @@ impl Boidee {
         // step forward
         new_boid.position += new_boid.velocity;
 
-        // do donut world checks --------------------
-        // end donut world checks ----------------
 
+        new_boid.velocity = new_boid.velocity *  FRICTION;
         let speed = new_boid.velocity.abs();
         if speed > MAX_SPEED{
             new_boid.velocity = new_boid.velocity / speed;
