@@ -1,10 +1,14 @@
-pub const SIZE_FACTOR: f32 = 8.0;
 
 use rayon::prelude::*;
 
+// how big to draw the boidees
+// tinyness will scale this value
+const SIZE_FACTOR: f32 = 8.0;
+
+const DEFAULT_VISUAL_RANGE: f32 = 40.0;
+
 use crate::boidee::Boidee;
 use crate::grid::Grid;
-use crate::LOCAL_SIZE;
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
 pub use crate::boidee::TargetType;
@@ -17,6 +21,7 @@ pub struct Boid{
     flock_scare: Option<f32>,
     tiny: Option<f32>,
     schedule: Option<std::time::Duration>,
+    visual_range: f32,
     #[cfg(feature = "print_timings")]
     avg_time: f32,
     #[cfg(feature = "print_timings")]
@@ -27,7 +32,7 @@ impl Boid {
     /// state (i.e. which `Grid` of [`Boidee`]s to use) and so are private. The `Grid`s start empty, and
     /// must be poulated with [init_boidee](crate::boid::Boid::init_boidees) or [init_boidee_random](crate::boid::Boid::init_boidee_random)
     pub fn new(bounds: ((f32, f32), (f32, f32)), schedule: Option<Duration>) -> Boid {
-        let empty_grid = Grid::new(bounds.0, bounds.1, LOCAL_SIZE);
+        let empty_grid = Grid::new(bounds.0, bounds.1, DEFAULT_VISUAL_RANGE);
         Boid {
             bounds: bounds,
             b0: empty_grid.clone(),// ew
@@ -36,7 +41,8 @@ impl Boid {
             //dt: Instant::now(),
             flock_scare: None,
             tiny: None,
-            schedule, 
+            schedule,
+            visual_range: DEFAULT_VISUAL_RANGE,
             #[cfg(feature = "print_timings")]
             avg_time: 0.0,
             #[cfg(feature = "print_timings")]
@@ -46,7 +52,7 @@ impl Boid {
     /// Initializes `num` [`Boidee`]s with randomized position and velocities. All spawned [`Boidee`]s will
     /// be within the bounds of the Boid they were spawned in
     pub fn init_boidee_random(&mut self, num: usize) {
-        let rand = Grid::random(num, self.bounds.0, self.bounds.1);
+        let rand = Grid::random(num, self.visual_range, self.bounds.0, self.bounds.1);
         self.b0 = rand.clone();
         self.b1 = rand;
         self.switch = false;
@@ -54,7 +60,7 @@ impl Boid {
     }
     /// Initilaizes from from a [`Vec`] of [`Boidee`]s. 
     pub fn init_boidees(&mut self, v: Vec<Boidee>) {
-        let new = Grid::from_vec(v, LOCAL_SIZE);
+        let new = Grid::from_vec(v, self.visual_range);
         self.b0 = new.clone();
         self.b1 = new;
         self.switch = false;
@@ -130,18 +136,29 @@ impl Boid {
     }
 
     pub fn set_boidees(&mut self, v: Vec<Boidee>){
-        self.b1 = Grid::from_vec(v, LOCAL_SIZE);
+        self.b1 = Grid::from_vec(v, self.visual_range);
         self.switch = true; // this is why you're not allowed directly access fields,
                             // self.b0 currently contains the wrong data
     }
 
     pub fn with_boidees(self, v: Vec<Boidee>) -> Self{
         Self{
-            b1: Grid::from_vec(v, LOCAL_SIZE),
+            b1: Grid::from_vec(v, self.visual_range),
             switch: true, // this is why you're not allowed directly access fields,
             ..self        // self.b0 currently contains the wrong data
     
         }
+    }
+
+    pub fn with_vision_range(self, new: f32) -> Self{
+        Self{
+            visual_range: new,
+            ..self
+        }
+    }
+
+    pub fn set_vision_range(&mut self, new: f32){
+        self.visual_range = new;
     }
 
     /// Updates then displays the [`Boidee`]s held by the [`Boid`]. If it gets done before [`schedule`](Boid::schedule) time has elapsed, it
@@ -185,24 +202,24 @@ impl Boid {
         } else {
             c = &self.b0;
         }
-
+        // 8.0 because it looks good when tinyness is 1.0
         for new_boid in c.iterate_flattened() {
             let direction = new_boid.velocity.normalized();
             canvas
+                // same idea as getting a line perpendicular to another line
+                // switch x and y and make on negative
                 .draw_triangle(
                     (
-                        ((direction.x * SIZE_FACTOR * tinyness) + new_boid.position.x) as i32,
-                        ((direction.y * SIZE_FACTOR * tinyness) + new_boid.position.y) as i32,
+                        ((direction.x * SIZE_FACTOR * tinyness) + new_boid.position.x),
+                        ((direction.y * SIZE_FACTOR * tinyness) + new_boid.position.y),
                     ),
-                    // bottom left: (sin+90 * fac) + world
                     (
-                        ((-direction.y * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.x) as i32,
-                        ((direction.x * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.y) as i32,
+                        ((-direction.y * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.x),
+                        ((direction.x * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.y),
                     ),
-                    // bottom right: (sin-90 * fac) + world
                     (
-                        ((direction.y * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.x) as i32,
-                        ((-direction.x * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.y) as i32,
+                        ((direction.y * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.x),
+                        ((-direction.x * SIZE_FACTOR * tinyness) / 2.0 + new_boid.position.y),
                     ),
                 )
                 .unwrap();
@@ -282,7 +299,8 @@ impl Boid {
                             c.get_cell_neighbors(boid),
                             self.bounds.0, self.bounds.1,
                             self.flock_scare,
-                            target
+                            target,
+                            self.visual_range
                         )
                     }
                 )
@@ -292,7 +310,7 @@ impl Boid {
         
         // flattened Vec over boidees
 
-        *b = Grid::from_vec(result, LOCAL_SIZE * 1.0);
+        *b = Grid::from_vec(result, self.visual_range * 1.0);
         // the buffers have been updated
         //self.dt = Instant::now();
         self.switch = !self.switch;
