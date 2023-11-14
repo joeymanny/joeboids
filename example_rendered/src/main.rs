@@ -60,9 +60,13 @@ pub fn main() {
     if args.tiny{
         flock_master.set_tiny(Some(args.tinyness));
     }
+    println!("doing pre-render stepping ...");
     flock_master.init_boidee_random(args.num);
+    (0..500).into_iter().progress().for_each(|_|{
+        flock_master.raw_step(None);
+    });
     println!("Rendering png sequence to {}/ ...", args.output_directory);
-    (0..args.frames).into_iter().progress().for_each(|frame_num|{
+    (1..args.frames + 1).into_iter().progress().for_each(|frame_num|{
         let mut canvas = BoidCanvasWrapper{
             buffer: new_buffer_bools(args.width, args.height),
             writer: new_png_writer(format!("{}/{}.png", args.output_directory, frame_num).as_str(), args.width, args.height),
