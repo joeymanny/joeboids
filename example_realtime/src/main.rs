@@ -59,22 +59,27 @@ impl DerefMut for Wrapper{
 }
 pub fn main() {
     let config = Arguments::parse();
+
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
  
-    let window = video_subsystem.window("boids", config.width, config.height)
+    let window = video_subsystem.window("joeboids", config.width, config.height)
         .position_centered()
+        .resizable()
         .build()
         .unwrap();
  
-    let  canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
+    let canvas = window.into_canvas().accelerated().build().unwrap();
     let mut canvas = Wrapper(canvas);
+
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.set_draw_color(Color::RGB(255, 255, 255));
     let _ = canvas.draw_triangle((4.0, 22.0), (66.0, 77.0), (99.0, 200.0));
     canvas.present();
-    let bounds = canvas.output_size().unwrap().clone();
+
+    let mut bounds = canvas.output_size().unwrap().clone();
     let mut flock_master = Boid::new(((0.0, 0.0), (bounds.0 as f32, bounds.1 as f32)), Some(Duration::from_nanos(16_666_666)));
     flock_master.init_boidee_random(config.num);
     if config.tiny{
@@ -99,7 +104,11 @@ pub fn main() {
                 _ => ()
             }
         }
-
+        let size = canvas.output_size().unwrap().clone();
+        if bounds != canvas.output_size().unwrap().clone(){
+            flock_master.set_bounds(((0.0, 0.0), (size.0 as f32, size.1 as f32)));
+            bounds = size;
+        }
 
         // set draw color to white
         canvas.set_draw_color(Color::RGB(255, 255, 255));
