@@ -6,7 +6,7 @@ use std::io::BufWriter;
 use clap::Parser;
 
 // trait for drawing triangles
-use joeboids::BoidCanvas;
+use joeboids::prelude::*;
 
 // progress bar
 use indicatif::ProgressIterator;
@@ -51,7 +51,7 @@ pub fn main() {
     // get cli options
     let args = Arguments::parse();
     // `None` means no schedule, which means no pausing to keep to a specific schedule
-    let mut flock_master = joeboids::Boid::new(
+    let mut flock_master = Boid::new(
         // size of the canvas, tells the boids when to turn around
         // rounded and translated into screen pixels for draw_triangle function
         ((0.0,0.0), (args.width as f32, args.height as f32)),
@@ -72,6 +72,9 @@ pub fn main() {
             writer: new_png_writer(format!("{}/{}.png", args.output_directory, frame_num).as_str(), args.width, args.height),
         }; // canvas is new ready to draw to a new file
         // draw to the buffer of bools
+        for _ in 0..args.multiplier{
+            flock_master.raw_step(None);
+        }
         flock_master.step_on_schedule(&mut canvas, None);
         // draw to the file
         canvas.write().unwrap();
@@ -134,6 +137,9 @@ struct Arguments{
     #[clap(long="frames", short='f', default_value_t=300)]
     /// Number of frames to write to the target directory. These will be named in sequence, i.e. 1.png 2.png 3.png etc.
     frames: usize,
+    #[clap(long="multiplier", short='m', default_value_t=0)]
+    /// Number of steps to step in between each frame.
+    multiplier: u32
 }
 
 // buffer of bools we can 'draw' to

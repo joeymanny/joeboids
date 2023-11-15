@@ -1,3 +1,5 @@
+
+
 // const PROTECTED_RANGE: f32 = 8.0;
 // const VISUAL_RANGE: f32 = 40.0;
 const AVOID_FACTOR: f32 = 0.05;
@@ -15,11 +17,9 @@ use crate::vector2::Vector2;
 use rand::prelude::*;
 use std::f32::consts::PI;
 
-#[derive(Clone, Copy)]
-pub enum TargetType{
-    Avoid,
-    Approach
-}
+
+/// The birds pushed around. These are simply a velocity and position. They have a min and max speed and a tiny drag force that 
+/// decays their velocity every step. Their vision is 5x further when it comes to [`target`](crate::TargetType)s.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Boidee {
     pub position: Vector2,
@@ -37,6 +37,7 @@ impl std::fmt::Display for Boidee {
     }
 }
 impl Boidee {
+    /// Returns a Self with a random normalized direction and a random position between `min` and `max`.
     pub fn random(min: (f32, f32), max: (f32, f32)) -> Boidee {
         let mut r = rand::thread_rng();
         let dir = (r.gen::<f32>() * 2.0 * PI).sin_cos();
@@ -50,6 +51,7 @@ impl Boidee {
             chosen: false
         }
     }
+    /// Returns a new Self with position 0,0 and velocity 1,0.
     #[allow(unused)]
     pub fn new() -> Boidee {
         Boidee {
@@ -59,13 +61,14 @@ impl Boidee {
             chosen: false
         }
     }
+    /// Returns a stepped Self based off the parameters passed in.
     pub fn step(
         &self,
         nearby_boids: Vec<&Boidee>,
         min: (f32, f32),
         max: (f32, f32),
         flock_scare: Option<f32>,
-        target: Option<((f32, f32), TargetType)>,
+        target: Option<((f32, f32), crate::TargetType)>,
         visual_range: f32,
     ) -> Boidee
     {
@@ -111,7 +114,7 @@ impl Boidee {
             let target_pos = Vector2::new(config.0.0, config.0.1);
             let distance = (target_pos - self.position).abs();
             if distance < visual_range * TARGETING_VISUAL_BOOST_FAC{
-            let target_fac = if let TargetType::Avoid = config.1{
+            let target_fac = if let crate::TargetType::Avoid = config.1{
                     1.0 / distance * -visual_range * TARGETING_VISUAL_BOOST_FAC
             }else{
                 1.0 / distance * visual_range * TARGETING_VISUAL_BOOST_FAC

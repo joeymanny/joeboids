@@ -11,7 +11,6 @@ use crate::boidee::Boidee;
 use crate::grid::Grid;
 use std::time::{Instant, Duration};
 use crate::BoidCanvas;
-pub use crate::boidee::TargetType;
 
 pub struct Boid{
     bounds: ((f32, f32), (f32, f32)),
@@ -49,121 +48,9 @@ impl Boid {
             avg_times: 0
         }
     }
-    /// Initializes `num` [`Boidee`]s with randomized position and velocities. All spawned [`Boidee`]s will
-    /// be within the bounds of the Boid they were spawned in
-    pub fn init_boidee_random(&mut self, num: usize) {
-        let rand = Grid::random(num, self.visual_range, self.bounds.0, self.bounds.1);
-        self.b0 = rand.clone();
-        self.b1 = rand;
-        self.switch = false;
-
-    }
-    /// Initilaizes from from a [`Vec`] of [`Boidee`]s. 
-    pub fn init_boidees(&mut self, v: Vec<Boidee>) {
-        let new = Grid::from_vec(v, self.visual_range);
-        self.b0 = new.clone();
-        self.b1 = new;
-        self.switch = false;
-    }
-    /// Sets the 'flock scare' of the [`Boidee`]s. This number will be multiplied to the cohesion rule.
-    /// A negative value will make them avoid one another.
-    /// A positive value will make them move toward one another.
-    /// A zero value will disable the cohesion rule altogether.
-    /// This value being set to `None` does the same thing as `Some(1.0)`.
-    /// Values further from zero will multiply the effect (we're just multiplying a scalar to a vector);
-    pub fn set_flock_scare(&mut self, factor: Option<f32>){
-        self.flock_scare = factor;
-    }
-
-    /// Same as [`set_flock_scare`], except returns `self` for nicer chaining.
-    pub fn with_flock_scare(self, factor: Option<f32>) -> Self{
-        Self{
-            flock_scare: factor,
-            ..self
-        }
-    }
-
-    /// Sets whether to draw [`Boidee`]s tiny, and if so how much. Values closer to zero are smaller.
-    /// You can also use this function to draw big boidees (their radius of perception will remain the same,
-    /// so resizing can make things look strange sometimes).
-    /// This value being `None` does the same thing as `Some(1.0)`
-    pub fn set_tiny(&mut self, state: Option<f32>){
-        self.tiny = state;
-    }
-
-    /// Same as [`set_tiny`], except returns `self` for nicer chaining.
-    pub fn with_tiny(self, state: Option<f32>) -> Self{
-        Self{
-            tiny: state,
-            ..self
-        }
-    }
-
-    /// Sets the "bounds" of the [`Boidee`]s. When they are within 1/10th of width/height to an edge, they will 
-    /// receive a constant acceleration away from that edge.
-    /// For example, with bounds (-100, -50), (200, 100), any boid at x coordinates > 170 will receive an acceleration
-    ///  of (-1,0) every step. (200 - -100) / 10 = 30, 200 - 30 = 170
-    /// Later I'll make the edge percentage customizable, it shouldn't be hard.
-    pub fn set_bounds(&mut self, new: ((f32, f32),(f32, f32))){
-        self.bounds = new;
-    }
-
-    /// Same as [`set_bounds`], except returns `self` for nicer chaining.
-    pub fn with_bounds(self, new: ((f32, f32),(f32, f32))) -> Self{
-        Self{
-            bounds: new,
-            ..self
-        }
-    }
-
-    /// Sets the schedule of the [step_on_schedule](Boid::step_on_schedule) function. If it gets done stepping and
-    /// drawing boidees before time, it will sleep the remaining time.
-    pub fn set_schedule(&mut self, new: Option<Duration>){
-        self.schedule = new;
-    }
-
-    /// Same as [`set_schedule`], excepts returns `self` for nicer chaining.
-    pub fn with_schedule(self, new: Option<Duration>) -> Self{
-        Self{
-            schedule: new,
-            ..self
-        }
-    }
-
-    /// Gets the schedule of the [`Boid`].
-    pub fn schedule(&self) -> Option<Duration>{
-        self.schedule
-    }
-
-    pub fn set_boidees(&mut self, v: Vec<Boidee>){
-        self.b1 = Grid::from_vec(v, self.visual_range);
-        self.switch = true; // this is why you're not allowed directly access fields,
-                            // self.b0 currently contains the wrong data
-    }
-
-    pub fn with_boidees(self, v: Vec<Boidee>) -> Self{
-        Self{
-            b1: Grid::from_vec(v, self.visual_range),
-            switch: true, // this is why you're not allowed directly access fields,
-            ..self        // self.b0 currently contains the wrong data
-    
-        }
-    }
-
-    pub fn with_vision_range(self, new: f32) -> Self{
-        Self{
-            visual_range: new,
-            ..self
-        }
-    }
-
-    pub fn set_vision_range(&mut self, new: f32){
-        self.visual_range = new;
-    }
-
-    /// Updates then displays the [`Boidee`]s held by the [`Boid`]. If it gets done before [`schedule`](Boid::schedule) time has elapsed, it
+        /// Updates then displays the [`Boidee`]s held by the [`Boid`]. If it gets done before [`schedule`](Boid::schedule), it
     /// will [`sleep`](std::thread::sleep) for the remaining time. Also prints timing info if the `print_timings` feature is enabled.
-    pub fn step_on_schedule<T: BoidCanvas>(&mut self, canvas: &mut T, target: Option<((f32, f32), crate::boidee::TargetType)>) {
+    pub fn step_on_schedule<T: BoidCanvas>(&mut self, canvas: &mut T, target: Option<((f32, f32), crate::TargetType)>) {
         let func_timer = Instant::now();
 
         self.raw_step(target);
@@ -190,7 +77,7 @@ impl Boid {
         }
     }
 
-    /// Draws the current state of the [`Boid`] to the `canvas` passed in.
+    /// Draws the current state of the [`Boid`] to the `canvas` passed in. Does not honor [`schedule`](Boid::schedule) or the `print_timings` feature.
     pub fn raw_draw<T: BoidCanvas>(&self, canvas: &mut T){
         let tinyness = if let Some(v) = self.tiny{
             v
@@ -228,7 +115,8 @@ impl Boid {
 
     /// Updates the [`Boid`] one step. Does not consider the schedule: running this in a loop will
     /// result in variable timing. Use [`step_on_schedule`](Boid::step_on_schedule) for realtime applications.
-    pub fn raw_step(&mut self, target: Option<((f32, f32), crate::boidee::TargetType)>){
+    /// Does not honor [`schedule`](Boid::schedule) or the `print_timings` feature.
+    pub fn raw_step(&mut self, target: Option<((f32, f32), crate::TargetType)>){
         // target buffer
         let b: &mut Grid;
         // buffer containing most up-to-date boids
@@ -315,4 +203,120 @@ impl Boid {
         //self.dt = Instant::now();
         self.switch = !self.switch;
     }
+
+    /// Initializes `num` [`Boidee`]s with randomized position and velocities. All spawned [`Boidee`]s will
+    /// be within the bounds of the Boid they were spawned in
+    pub fn init_boidee_random(&mut self, num: usize) {
+        let rand = Grid::random(num, self.visual_range, self.bounds.0, self.bounds.1);
+        self.b0 = rand.clone();
+        self.b1 = rand;
+        self.switch = false;
+
+    }
+    /// Initilaizes from from a [`Vec`] of [`Boidee`]s. 
+    pub fn init_boidees(&mut self, v: Vec<Boidee>) {
+        let new = Grid::from_vec(v, self.visual_range);
+        self.b0 = new.clone();
+        self.b1 = new;
+        self.switch = false;
+    }
+    /// Sets the 'flock scare' of the [`Boidee`]s. This number will be multiplied to the cohesion rule.
+    /// A negative value will make them avoid one another.
+    /// A positive value will make them move toward one another.
+    /// A zero value will disable the cohesion rule altogether.
+    /// This value being set to `None` does the same thing as `Some(1.0)`.
+    /// Values further from zero will multiply the effect (we're just multiplying a scalar to a vector);
+    pub fn set_flock_scare(&mut self, factor: Option<f32>){
+        self.flock_scare = factor;
+    }
+
+    /// Same as `set_flock_scare`, except returns `self` for nicer chaining.
+    pub fn with_flock_scare(self, factor: Option<f32>) -> Self{
+        Self{
+            flock_scare: factor,
+            ..self
+        }
+    }
+
+    /// Sets whether to draw [`Boidee`]s tiny, and if so how much. Values closer to zero are smaller.
+    /// You can also use this function to draw big boidees (their radius of perception will remain the same,
+    /// so resizing can make things look strange sometimes).
+    /// This value being `None` does the same thing as `Some(1.0)`
+    pub fn set_tiny(&mut self, state: Option<f32>){
+        self.tiny = state;
+    }
+
+    /// Same as `set_tiny`, except returns `self` for nicer chaining.
+    pub fn with_tiny(self, state: Option<f32>) -> Self{
+        Self{
+            tiny: state,
+            ..self
+        }
+    }
+
+    /// Sets the "bounds" of the [`Boidee`]s. When they are within 1/10th of width/height to an edge, they will 
+    /// receive a constant acceleration away from that edge.
+    /// For example, with bounds (-100, -50), (200, 100), any boid at x coordinates > 170 will receive an acceleration
+    ///  of (-1,0) every step. (200 - -100) / 10 = 30, 200 - 30 = 170
+    /// Later I'll make the edge percentage customizable, it shouldn't be hard.
+    pub fn set_bounds(&mut self, new: ((f32, f32),(f32, f32))){
+        self.bounds = new;
+    }
+
+    /// Same as `set_bounds`, except returns `self` for nicer chaining.
+    pub fn with_bounds(self, new: ((f32, f32),(f32, f32))) -> Self{
+        Self{
+            bounds: new,
+            ..self
+        }
+    }
+
+    /// Sets the schedule of the [step_on_schedule](Boid::step_on_schedule) function. If it gets done stepping and
+    /// drawing boidees before time, it will sleep the remaining time.
+    pub fn set_schedule(&mut self, new: Option<Duration>){
+        self.schedule = new;
+    }
+
+    /// Same as `set_schedule`, excepts returns `self` for nicer chaining.
+    pub fn with_schedule(self, new: Option<Duration>) -> Self{
+        Self{
+            schedule: new,
+            ..self
+        }
+    }
+
+    /// Gets the schedule of the [`Boid`].
+    pub fn schedule(&self) -> Option<Duration>{
+        self.schedule
+    }
+
+    /// Replaces existing [`Boidee`]s with the ones in v.
+    pub fn set_boidees(&mut self, v: Vec<Boidee>){
+        self.b1 = Grid::from_vec(v, self.visual_range);
+        self.switch = true; // this is why you're not allowed direct access fields,
+                            // self.b0 currently contains the wrong data
+    }
+
+    /// Same as `set_boidees` except returns `self` for nicer chaining
+    pub fn with_boidees(self, v: Vec<Boidee>) -> Self{
+        Self{
+            b1: Grid::from_vec(v, self.visual_range),
+            switch: true,
+            ..self
+        }
+    }
+    /// Sets how far the [`Boidee`]s can see.
+    /// If this value is <= 0 they cannot see
+    pub fn with_vision_range(self, new: f32) -> Self{
+
+        Self{
+            visual_range: new,
+            ..self
+        }
+    }
+
+    pub fn set_vision_range(&mut self, new: f32){
+        self.visual_range = new;
+    }
+
 }
