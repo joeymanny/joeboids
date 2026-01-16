@@ -3,7 +3,7 @@
 
 
 
-/// Main [`Boid`](`crate::boid::Boid`) struct, holds all [`Boidee`](`crate::boidee::Boidee`)s and logic
+/// Contains the main [`Boid`](`crate::boid::Boid`) struct, which holds all [`Boidee`](`crate::boidee::Boidee`)s and logic
 pub mod boid;
 /// Type representing a single bird, just a position and velocity
 pub mod boidee;
